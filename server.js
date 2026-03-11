@@ -142,7 +142,8 @@ const pool = mysql.createPool({
     connectionLimit: 20,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 10000
+    keepAliveInitialDelay: 10000,
+    ssl: { rejectUnauthorized: true }
 });
 
 // SQLite-to-MySQL Compatibility Layer
