@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Status - VisitorGate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .status-card {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .status-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+
+        .pending {
+            background: var(--yellow-bg);
+            color: var(--yellow);
+        }
+
+        .approved {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .rejected {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+    </style>
+</head>
+
+<body class="bg-dark flex-center" style="min-height:100vh; padding: 20px">
+    <div class="visitor-page">
+        <div class="brand">🛡️ VisitorGate</div>
+
+        <div id="loading" class="card text-center" style="padding:48px">
+            <div class="pulse" style="font-size:48px">⏳</div>
+            <p class="mt-16 text-muted">Checking request status...</p>
+        </div>
+
+        <div id="status-view" class="card status-card" style="display:none">
+            <div id="s-icon" class="status-icon">⏳</div>
+            <h2 id="s-title">Request Pending</h2>
+            <p id="s-msg" class="text-muted mt-8">Your request is currently being reviewed by the staff.</p>
+            <div id="s-badge" class="status-badge pending">PENDING</div>
+
+            <div id="approved-info"
+                style="display:none; margin-top:32px; padding-top:24px; border-top:1px solid var(--border)">
+                <p class="text-sm">You can now proceed to the entrance.</p>
+                <div class="mt-16 p-16"
+                    style="background:var(--blue-bg); border-radius:12px; border:1px dashed var(--blue); color:var(--blue)">
+                    <b>Approval Time:</b> <span id="s-time"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function checkStatus() {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if (!id) return;
+
+            try {
+                const req = await api.get('/visitor-requests/' + id);
+
+                if (!req) {
+                    document.getElementById('loading').innerHTML = '<h3>Request Not Found</h3><p class="text-muted mt-8">The request might have expired.</p>';
+                    return;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('status-view').style.display = 'block';
+
+                const icon = document.getElementById('s-icon');
+                const title = document.getElementById('s-title');
+                const msg = document.getElementById('s-msg');
+                const badge = document.getElementById('s-badge');
+
+                if (req.approval_status === 'APPROVED') {
+                    icon.textContent = '✅';
+                    title.textContent = 'Request Approved!';
+                    msg.innerHTML = `Your request is approved! Please proceed to the entrance.<br><small class="text-muted">Staff: ${req.staff_name} (${req.staff_designation || 'Staff'})</small>`;
+                    badge.textContent = 'APPROVED';
+                    badge.className = 'status-badge approved';
+                    document.getElementById('approved-info').style.display = 'block';
+                    document.getElementById('s-time').textContent = req.approval_time ? new Date(req.approval_time).toLocaleTimeString() : 'Just now';
+                } else if (req.approval_status === 'REJECTED') {
+                    icon.textContent = '❌';
+                    title.textContent = "Can't Meet Today";
+                    msg.innerHTML = `Today you can't meet <b>${req.staff_name}</b>.<br>Reason: ${req.rejection_reason || 'Personal reasons'}`;
+                    badge.textContent = 'REJECTED';
+                    badge.className = 'status-badge rejected';
+                    document.getElementById('approved-info').style.display = 'none';
+                } else if (req.approval_status === 'BUSY') {
+                    icon.textContent = '⏳';
+                    title.textContent = 'Staff is Busy';
+                    msg.innerHTML = `<b>${req.staff_name}</b> is currently busy with another meeting.<br>Please wait at the reception. We will notify you shortly.`;
+                    badge.textContent = 'BUSY';
+                    badge.className = 'status-badge pending';
+                    document.getElementById('approved-info').style.display = 'none';
+                } else {
+                    icon.textContent = '⏳';
+                    title.textContent = 'Request Pending';
+                    msg.textContent = 'Your request is currently being reviewed by the staff.';
+                    badge.textContent = 'PENDING';
+                    badge.className = 'status-badge pending';
+                    document.getElementById('approved-info').style.display = 'none';
+                }
+            } catch (e) {
+                console.error(e);
+                if (e.message.includes('404')) {
+                    document.getElementById('loading').innerHTML = '<h3>Link Expired</h3><p class="text-muted mt-8">This status link is no longer active.</p>';
+                }
+            }
+        }
+
+        setInterval(checkStatus, 3000);
+        checkStatus();
+    </script>
+</body>
+
+</html>

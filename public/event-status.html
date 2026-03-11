@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Registration Status - VisitorGate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .status-card {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .status-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+
+        .pending {
+            background: var(--yellow-bg);
+            color: var(--yellow);
+        }
+
+        .approved {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .rejected {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+    </style>
+</head>
+
+<body class="bg-dark flex-center" style="min-height:100vh; padding: 20px">
+    <div class="visitor-page">
+        <div class="brand">🛡️ VisitorGate</div>
+
+        <div id="loading" class="card text-center" style="padding:48px">
+            <div class="pulse" style="font-size:48px">⏳</div>
+            <p class="mt-16 text-muted">Checking registration status...</p>
+        </div>
+
+        <div id="status-view" class="card status-card" style="display:none">
+            <div id="s-icon" class="status-icon">⏳</div>
+            <h2 id="s-title">Registration Pending</h2>
+            <p id="s-msg" class="text-muted mt-8">Your registration for the event is being reviewed.</p>
+            <div id="s-badge" class="status-badge pending">PENDING</div>
+
+            <div id="approved-info"
+                style="display:none; margin-top:32px; padding-top:24px; border-top:1px solid var(--border)">
+                <p class="text-sm">You have been approved for the event!</p>
+                <a id="pass-link" href="#" class="btn btn-primary mt-16" style="display:inline-block; width:auto">🎟️
+                    View Virtual ID Pass</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function checkStatus() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            const token = urlParams.get('token') || urlParams.get('t');
+
+            if (!id && !token) {
+                document.getElementById('loading').innerHTML = '<h3>Invalid Link</h3><p class="text-muted mt-8">Missing registration ID or token.</p>';
+                return;
+            }
+
+            try {
+                const endpoint = id ? `/event-registrations/status/${id}` : `/event-registrations/verify?token=${token}`;
+                const res = await api.get(endpoint);
+
+                if (!res || res.error) {
+                    document.getElementById('loading').innerHTML = '<h3>Not Found</h3><p class="text-muted mt-8">Registration data not found.</p>';
+                    return;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('status-view').style.display = 'block';
+
+                const icon = document.getElementById('s-icon');
+                const title = document.getElementById('s-title');
+                const msg = document.getElementById('s-msg');
+                const badge = document.getElementById('s-badge');
+
+                if (res.approval_status === 'APPROVED') {
+                    icon.textContent = '✅';
+                    title.textContent = 'Registration Approved!';
+                    msg.textContent = 'You are set for the event. Click below to view your pass.';
+                    badge.textContent = 'APPROVED';
+                    badge.className = 'status-badge approved';
+                    document.getElementById('approved-info').style.display = 'block';
+                    document.getElementById('pass-link').href = 'event-pass.html?token=' + res.pass_token;
+                } else if (res.approval_status === 'REJECTED') {
+                    icon.textContent = '❌';
+                    title.textContent = 'Registration Rejected';
+                    msg.textContent = 'Sorry, your registration was not approved.';
+                    badge.textContent = 'REJECTED';
+                    badge.className = 'status-badge rejected';
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loading').innerHTML = '<h3>Error</h3><p class="text-muted mt-8">Unable to check status.</p>';
+            }
+        }
+
+        const pollInterval = setInterval(async () => {
+            await checkStatus();
+            if (document.getElementById('s-badge').textContent === 'APPROVED' ||
+                document.getElementById('s-badge').textContent === 'REJECTED') {
+                clearInterval(pollInterval);
+            }
+        }, 5000);
+
+        checkStatus();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - VisitorGate</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-dark flex-center" style="min-height:100vh">
+    <div class="card fade-in" style="max-width:400px; width:100%; padding:40px">
+        <div class="text-center mb-32">
+            <span style="font-size:48px">👤</span>
+            <h1 class="mt-16">Staff Login</h1>
+            <p class="text-muted">Login using your Email or Staff ID</p>
+        </div>
+        <form id="login-form">
+            <div id="login-error" class="badge badge-red mb-16 w-100 text-center" style="display:none; padding:10px">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email or Staff ID</label>
+                <input type="text" id="email" required placeholder="VG-CSE-001 or staff@example.com" value="VG-CSE-001">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="password" required placeholder="••••••••" value="admin">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg mt-8" id="login-btn">Sign In</button>
+        </form>
+        <div class="text-center mt-24">
+            <a href="index.html" class="text-xs text-muted">← Back to Role Selection</a>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn');
+            const err = document.getElementById('login-error');
+
+            btn.disabled = true;
+            btn.textContent = 'Authenticating...';
+            err.style.display = 'none';
+
+            try {
+                const res = await fetch(window.location.origin + '/auth/v1/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Login failed');
+                if (data.user.role !== 'staff') throw new Error('Invalid staff credentials or role');
+
+                localStorage.setItem('vms_user', JSON.stringify(data.user));
+                localStorage.setItem('vms_token', data.access_token);
+                window.location.href = 'staff.html';
+            } catch (e) {
+                err.textContent = e.message;
+                err.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+    </script>
+</body>
+
+</html>

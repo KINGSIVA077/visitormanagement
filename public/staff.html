@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Portal — VisitorGate</title>
+    <meta name="description" content="VisitorGate Staff Portal - Approve or reject visitor requests in real-time.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="bg-dark">
+    <!-- Staff Header -->
+    <div class="staff-header">
+        <div class="flex-between">
+            <div>
+                <h2 id="staff-name" style="font-size:1.3rem;">Loading...</h2>
+                <p class="text-xs" style="opacity:0.85" id="staff-dept">Department</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <button id="notif-btn" onclick="requestNotifPermission()" class="btn-icon" title="Enable Notifications"
+                    style="background:rgba(255,255,255,0.1); border:none; color:white; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">🔔</button>
+                <div class="stat-icon"
+                    style="background:rgba(255,255,255,0.15);width:42px;height:42px;font-size:1.2rem;">👤</div>
+                <button onclick="handleLogout()"
+                    style="background:rgba(255,255,255,0.12);border:none;color:white;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-family:inherit;font-weight:500;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.12)'">Sign Out</button>
+            </div>
+        </div>
+
+        <div class="status-toggle" id="availability-toggle">
+            <button onclick="setStatus('available')" id="btn-available">Available</button>
+            <button onclick="setStatus('busy')" id="btn-busy">Busy</button>
+            <button onclick="setStatus('away')" id="btn-away">Away</button>
+        </div>
+    </div>
+
+    <main class="p-20" style="max-width:800px;margin:0 auto;">
+        <!-- Tabs -->
+        <div style="display:flex;gap:20px;margin-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <button onclick="showTab('active')" id="tab-active" class="tab-btn active"
+                data-lang="active_requests">Active Requests</button>
+            <button onclick="showTab('history')" id="tab-history" class="tab-btn" data-lang="visitor_history">Visitor
+                History</button>
+        </div>
+
+        <div id="requests-list">
+            <div class="text-center py-40">
+                <p class="text-muted">Checking for requests...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/lang.js"></script>
+    <script>
+        const currentUser = auth.requireAuth('staff');
+        if (currentUser) {
+            document.getElementById('staff-name').textContent = currentUser.name;
+            document.getElementById('staff-dept').textContent = currentUser.designation || 'Staff Member';
+        }
+        function handleLogout() { auth.logout(); }
+    </script>
+    <script src="js/staff.js"></script>
+</body>
+
+</html>

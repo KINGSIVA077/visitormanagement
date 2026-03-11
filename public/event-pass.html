@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual ID Pass - VisitorGate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --pass-font: 'Outfit', 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--pass-font);
+            overflow-x: hidden;
+            background: #050505;
+        }
+
+        .mesh-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+                #050505;
+        }
+
+        .pass-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            perspective: 1000px;
+            width: 100%;
+        }
+
+        .pass-card {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.9) rotateX(-10deg);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotateX(0);
+            }
+        }
+
+        .pass-header {
+            background: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
+            padding: 32px 24px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pass-header::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+            opacity: 0.3;
+        }
+
+        .pass-header .brand {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .pass-header h2 {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .pass-body {
+            padding: 32px 28px;
+        }
+
+        .pass-name {
+            font-size: 28px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(to bottom, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pass-org {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 15px;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .status-badge-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .pass-status {
+            padding: 8px 20px;
+            border-radius: 99px;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .pass-status.approved {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes statusPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .pass-qr-container {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .pass-qr-container:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .pass-qr-container img {
+            width: 180px;
+            height: 180px;
+            background: #fff;
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .pass-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 24px 8px 0;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .detail-item .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .detail-item .value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .pass-footer {
+            text-align: center;
+            padding: 24px 32px;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .btn-print {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 12px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 32px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-print:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        @media print {
+
+            .mesh-background,
+            .btn-print,
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: #fff;
+                color: #000;
+                padding: 0;
+            }
+
+            .pass-container {
+                min-height: auto;
+                padding: 40px 20px;
+            }
+
+            .pass-card {
+                border: 2px solid #ddd;
+                box-shadow: none;
+                background: #fff;
+                color: #000;
+                border-radius: 16px;
+                max-width: 480px;
+            }
+
+            .pass-name {
+                -webkit-text-fill-color: #000;
+                color: #000;
+            }
+
+            .pass-header {
+                background: #6366f1 !important;
+                color: #fff !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mesh-background"></div>
+
+    <div class="pass-container">
+        <div class="brand no-print mb-32" style="font-weight: 800; font-size: 1.5rem; letter-spacing: -1px;">
+            🛡️ <span class="text-gradient">VisitorGate</span>
+        </div>
+
+        <!-- LOADING -->
+        <div id="loading-view" class="card text-center glass" style="padding:48px">
+            <div class="pulse" style="font-size:48px;margin-bottom:16px">🎫</div>
+            <p>Authenticating your access pass...</p>
+        </div>
+
+        <!-- ERROR -->
+        <div id="error-view" class="card glass" style="display:none;text-align:center;padding:48px;max-width:400px">
+            <div style="font-size:56px;margin-bottom:20px">⚠️</div>
+            <h2 class="text-gradient">Access Denied</h2>
+            <p style="margin-top:12px;color:var(--text-secondary)" id="error-msg">This digital pass is invalid or has
+                reached its expiration.</p>
+            <button class="btn btn-primary mt-20" onclick="location.reload()">Retry Connection</button>
+        </div>
+
+        <!-- PASS CARD -->
+        <div id="pass-view"
+            style="display:none; width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <div class="pass-card">
+                <div class="pass-header">
+                    <div class="brand">VisitorGate Access</div>
+                    <h2>Virtual Event ID</h2>
+                </div>
+
+                <div class="pass-body">
+                    <div class="pass-name" id="pass-name"></div>
+                    <div class="pass-org" id="pass-org"></div>
+
+                    <div class="status-badge-container">
+                        <div id="pass-status-badge" class="pass-status approved">
+                            <span id="pass-status-icon">✅</span>
+                            <span id="pass-status-text">APPROVED</span>
+                        </div>
+                    </div>
+
+                    <div class="pass-qr-container">
+                        <img id="pass-qr-img" src="" alt="Access QR">
+                    </div>
+
+                    <div class="pass-details-grid">
+                        <div class="detail-item">
+                            <div class="label">Event</div>
+                            <div class="value" id="pass-event"></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Date</div>
+                            <div class="value" id="pass-date"></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Venue</div>
+                            <div class="value" id="pass-venue"></div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Phone</div>
+                            <div class="value" id="pass-phone"></div>
+                        </div>
+                    </div>
+                    <!-- Custom Data Fields -->
+                    <div id="pass-custom-fields"
+                        style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.08); padding-top:20px"></div>
+                </div>
+
+                <div class="pass-footer">
+                    Present this digital ID at the security checkpoint for verification.
+                    Valid for authorized entry only.
+                </div>
+            </div>
+
+            <button class="btn-print no-print" onclick="window.print()">
+                <span>🖨️</span> Save or Print Pass
+            </button>
+        </div>
+    </div>
+
+
+    <script src="js/api.js"></script>
+    <script src="js/event-pass.js"></script>
+</body>
+
+</html>

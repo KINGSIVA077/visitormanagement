@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Registration - VisitorGate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0e1a;
+            color: #f1f5f9;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .visitor-page {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .brand {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #6366f1;
+            padding: 16px 0;
+        }
+
+        .card {
+            background: rgba(26, 31, 53, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(12px);
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: #111827;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #f1f5f9;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #6366f1;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .text-xs {
+            font-size: 12px;
+        }
+
+        .text-sm {
+            font-size: 13px;
+        }
+
+        .text-muted {
+            color: #64748b;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .event-banner {
+            background: linear-gradient(135deg, #4338ca, #6366f1);
+            border: none;
+            color: #fff;
+            padding: 28px;
+        }
+
+        .event-banner .tag {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .event-banner .meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            margin-top: 16px;
+        }
+
+        #loading-view {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-box {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .success-box {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 16px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="visitor-page">
+        <div class="brand">🛡️ VisitorGate</div>
+
+        <!-- LOADING VIEW -->
+        <div id="loading-view" class="card">
+            <div class="spinner"></div>
+            <p style="margin-top:16px;color:#94a3b8;text-align:center">Loading event details...</p>
+        </div>
+
+        <!-- ERROR VIEW -->
+        <div id="error-view" class="card" style="display:none;text-align:center;padding:48px">
+            <div style="font-size:56px;margin-bottom:20px">⚠️</div>
+            <h2>Invalid Event Link</h2>
+            <p id="error-msg" style="margin-top:12px;color:#94a3b8">This event link is invalid or expired.</p>
+        </div>
+
+        <!-- EVENT INFO + FORM -->
+        <div id="form-view" style="display:none">
+            <!-- Event Banner -->
+            <div class="card event-banner">
+                <div class="tag">📅 EVENT</div>
+                <h2 id="evt-name" style="margin-bottom:8px;font-size:22px"></h2>
+                <p id="evt-desc" style="opacity:0.8;font-size:13px"></p>
+                <div class="meta">
+                    <span>📅 <span id="evt-date"></span></span>
+                    <span>⏰ <span id="evt-time"></span></span>
+                    <span>📍 <span id="evt-venue"></span></span>
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <div class="card">
+                <h3 class="mb-8">Register for this Event</h3>
+                <p class="mb-20 text-sm text-muted">Fill in your details. You'll receive a Virtual ID Pass once
+                    approved.</p>
+
+                <div id="form-error" class="error-box"></div>
+
+                <form id="event-form">
+                    <!-- Dynamic fields rendered here -->
+                    <div id="dynamic-fields"></div>
+
+                    <button type="submit" class="btn btn-primary" style="margin-top:8px" id="submit-btn">
+                        📝 Register for Event
+                    </button>
+
+                    <p class="text-xs text-muted text-center" style="margin-top:16px">
+                        🔒 Your data is secure. You'll receive a Virtual ID Pass via email upon approval.
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- SUCCESS VIEW -->
+        <div id="success-view" class="card" style="display:none;text-align:center;padding:48px">
+            <div style="font-size:56px;margin-bottom:20px">✅</div>
+            <h2>Registration Submitted!</h2>
+            <p style="margin-top:12px;line-height:1.8;color:#94a3b8">
+                Your registration has been submitted.<br>
+                You will receive an email with your <b>Virtual ID Pass</b> once approved.
+            </p>
+            <div class="success-box" style="margin-top:24px">
+                Status: ⏳ PENDING APPROVAL
+            </div>
+            <div id="status-qr-container" style="margin-top:32px; display:none">
+                <p class="text-xs text-muted mb-8">Scan to track your registration status:</p>
+                <img id="status-qr-img" style="width:160px; height:160px; border-radius:12px; border:4px solid #fff">
+                <p id="status-qr-url" class="text-xs text-muted mt-8" style="word-break:break-all; opacity:0.6"></p>
+            </div>
+            <p class="text-xs text-muted" style="margin-top:20px">
+                Please check your email regularly for the approval notification.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        async function apiGet(url) {
+            const res = await fetch(API_BASE + url);
+            const text = await res.text();
+            try { return JSON.parse(text); }
+            catch (e) {
+                const m = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                if (m) return JSON.parse(m[0]);
+                throw new Error('Invalid response');
+            }
+        }
+
+        async function apiPost(url, data) {
+            const res = await fetch(API_BASE + url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const text = await res.text();
+            try { return JSON.parse(text); }
+            catch (e) {
+                const m = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                if (m) { const parsed = JSON.parse(m[0]); if (parsed.error) throw new Error(parsed.error); return parsed; }
+                throw new Error(res.ok ? 'Invalid response' : 'HTTP ' + res.status);
+            }
+        }
+
+        function getParam(name) {
+            return new URLSearchParams(window.location.search).get(name);
+        }
+
+        let eventData = null;
+
+        // Build input element for a custom field definition
+        function renderField(field, index) {
+            const id = 'cf-' + index;
+            const req = field.required ? 'required' : '';
+            const ph = field.placeholder || '';
+
+            let input = '';
+            switch (field.type) {
+                case 'textarea':
+                    input = `<textarea id="${id}" ${req} placeholder="${ph}" rows="3"></textarea>`;
+                    break;
+                case 'select':
+                    const opts = (field.options || []).map(o => `<option value="${o}">${o}</option>`).join('');
+                    input = `<select id="${id}" ${req}><option value="">Select...</option>${opts}</select>`;
+                    break;
+                case 'email':
+                    input = `<input type="email" id="${id}" ${req} placeholder="${ph}">`;
+                    break;
+                case 'number':
+                    input = `<input type="number" id="${id}" ${req} placeholder="${ph}">`;
+                    break;
+                case 'phone':
+                    input = `<input type="tel" id="${id}" ${req} placeholder="${ph}">`;
+                    break;
+                default:
+                    input = `<input type="text" id="${id}" ${req} placeholder="${ph}">`;
+            }
+
+            return `
+                <div class="form-group">
+                    <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
+                    ${input}
+                </div>
+            `;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const eventToken = getParam('event');
+
+            if (!eventToken) {
+                showError('Missing event token. Please scan the event QR code.');
+                return;
+            }
+
+            try {
+                const event = await apiGet('/events/by-token/' + eventToken);
+
+                if (!event || event.error) {
+                    showError(event?.error || 'Event not found or expired.');
+                    return;
+                }
+
+                eventData = event;
+
+                document.getElementById('evt-name').textContent = event.name;
+                document.getElementById('evt-desc').textContent = event.description || '';
+                document.getElementById('evt-date').textContent = event.event_date ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBA';
+                document.getElementById('evt-time').textContent = event.event_time || 'TBA';
+                document.getElementById('evt-venue').textContent = event.venue || 'TBA';
+
+                // Render dynamic fields
+                let fields = event.custom_fields;
+                if (typeof fields === 'string') { try { fields = JSON.parse(fields); } catch (e) { fields = null; } }
+
+                const container = document.getElementById('dynamic-fields');
+                if (fields && Array.isArray(fields) && fields.length > 0) {
+                    container.innerHTML = fields.map((f, i) => renderField(f, i)).join('');
+                } else {
+                    // Fallback: show default hardcoded fields if no custom fields defined
+                    container.innerHTML = `
+                        <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="cf-0" required placeholder="Enter your full name"></div>
+                        <div class="form-group"><label class="form-label">Email Address *</label><input type="email" id="cf-1" required placeholder="your.email@example.com"></div>
+                        <div class="form-group"><label class="form-label">Phone Number *</label><input type="tel" id="cf-2" required placeholder="+91 9876543210"></div>
+                        <div class="form-group"><label class="form-label">Organization / College</label><input type="text" id="cf-3" placeholder="Your organization name"></div>
+                        <div class="form-group"><label class="form-label">Designation / Role</label><input type="text" id="cf-4" placeholder="e.g. Student, Professor, etc."></div>
+                    `;
+                    // Also set fallback field definitions for submit
+                    eventData._fallback_fields = [
+                        { label: 'Full Name' }, { label: 'Email Address' }, { label: 'Phone Number' },
+                        { label: 'Organization / College' }, { label: 'Designation / Role' }
+                    ];
+                }
+
+                document.getElementById('loading-view').style.display = 'none';
+                document.getElementById('form-view').style.display = 'block';
+
+            } catch (e) {
+                console.error('Event load error:', e);
+                showError(e.message || 'Unable to load event. The link may be expired.');
+            }
+
+            document.getElementById('event-form').addEventListener('submit', submitForm);
+        });
+
+        async function submitForm(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                // Collect field values
+                let fields = eventData.custom_fields;
+                if (typeof fields === 'string') { try { fields = JSON.parse(fields); } catch (ex) { fields = null; } }
+                if (!fields || !Array.isArray(fields)) {
+                    fields = eventData._fallback_fields || [];
+                }
+
+                const custom_data = {};
+                let visitor_name = '', visitor_email = '', visitor_phone = '', organization = '', designation = '';
+
+                fields.forEach((f, i) => {
+                    const el = document.getElementById('cf-' + i);
+                    const value = el ? el.value.trim() : '';
+                    custom_data[f.label] = value;
+
+                    // Map well-known fields to fixed columns
+                    const lbl = f.label.toLowerCase();
+                    if (lbl.includes('name') && !lbl.includes('org')) visitor_name = value;
+                    if (lbl.includes('email')) visitor_email = value;
+                    if (lbl.includes('phone')) visitor_phone = value;
+                    if (lbl.includes('organization') || lbl.includes('college') || lbl.includes('company')) organization = value;
+                    if (lbl.includes('designation') || lbl.includes('role') || lbl.includes('title')) designation = value;
+                });
+
+                if (!visitor_name) visitor_name = Object.values(custom_data)[0] || 'Visitor';
+
+                const res = await apiPost('/event-registrations', {
+                    event_id: eventData.id,
+                    visitor_name,
+                    visitor_email,
+                    visitor_phone,
+                    organization,
+                    designation,
+                    custom_data
+                });
+
+                document.getElementById('form-view').style.display = 'none';
+                document.getElementById('success-view').style.display = 'block';
+
+                if (res && res.id) {
+                    startStatusPolling(res.id);
+                }
+            } catch (err) {
+                const errEl = document.getElementById('form-error');
+                errEl.textContent = err.message || 'Registration failed. Please try again.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = '📝 Register for Event';
+            }
+        }
+
+        let pollingInterval = null;
+        function startStatusPolling(regId) {
+            if (pollingInterval) clearInterval(pollingInterval);
+
+            pollingInterval = setInterval(async () => {
+                try {
+                    const status = await apiGet('/event-registrations/status/' + regId);
+                    if (status && status.approval_status === 'APPROVED') {
+                        clearInterval(pollingInterval);
+                        updateSuccessToApproved(status);
+                    } else if (status && status.approval_status === 'REJECTED') {
+                        clearInterval(pollingInterval);
+                        updateSuccessToRejected(status);
+                    }
+                } catch (e) { console.warn('Polling error:', e); }
+            }, 3000);
+        }
+
+        function updateSuccessToApproved(data) {
+            const successBox = document.querySelector('.success-box');
+            successBox.innerHTML = 'Status: ✅ APPROVED';
+            successBox.style.background = 'rgba(16, 185, 129, 0.2)';
+            successBox.style.color = '#10b981';
+
+            const btnContainer = document.createElement('div');
+            btnContainer.style.marginTop = '24px';
+            btnContainer.innerHTML = `
+                <a href="/event-pass.html?token=${data.pass_token}" class="btn btn-primary" style="display:inline-block; text-decoration:none">
+                    🎟️ View Virtual ID Pass
+                </a>
+            `;
+            document.getElementById('success-view').appendChild(btnContainer);
+        }
+
+        function updateSuccessToRejected(data) {
+            const successBox = document.querySelector('.success-box');
+            successBox.innerHTML = 'Status: ❌ REJECTED';
+            successBox.style.background = 'rgba(239, 68, 68, 0.2)';
+            successBox.style.color = '#ef4444';
+        }
+
+        function showError(msg) {
+            document.getElementById('loading-view').style.display = 'none';
+            document.getElementById('form-view').style.display = 'none';
+            if (msg) document.getElementById('error-msg').textContent = msg;
+            document.getElementById('error-view').style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>
