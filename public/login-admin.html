@@ -35,7 +35,13 @@
     </div>
 
     <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
     <script>
+        // Check if already logged in
+        if (typeof auth !== 'undefined' && auth.checkExistingSession) {
+            auth.checkExistingSession();
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;

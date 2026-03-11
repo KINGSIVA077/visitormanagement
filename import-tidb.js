@@ -20,11 +20,16 @@ async function importDatabase() {
     console.log('Connected to TiDB database!');
 
     try {
-        const sql = fs.readFileSync('visitorgate.sql', 'utf8');
+        const sql = fs.readFileSync('visitorgate (1).sql', 'utf8');
         console.log('Executing SQL file... please wait. This might take a minute.');
 
+        // Drop existing tables to avoid "already exists" errors
+        await connection.query('SET FOREIGN_KEY_CHECKS = 0;');
+        await connection.query('DROP TABLE IF EXISTS checkins, event_checkins, event_registrations, notifications, visitor_requests, users, visitor_sessions, departments, events, form_templates, blacklist, audit_logs;');
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1;');
+
         await connection.query(sql);
-        console.log('✅ Successfully imported visitorgate.sql to TiDB Cloud!');
+        console.log('✅ Successfully imported visitorgate (1).sql to TiDB Cloud!');
     } catch (err) {
         console.error('❌ Error executing SQL:', err);
     } finally {
