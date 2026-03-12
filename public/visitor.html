@@ -214,49 +214,26 @@
             <div id="form-error" class="error-box"></div>
 
             <form id="visitor-form">
+                <!-- 1. Destination (Always required for workflow) -->
                 <div class="form-group">
-                    <label class="form-label">Full Name *</label>
-                    <input type="text" name="name" id="f-name" required placeholder="Enter your full name">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone Number *</label>
-                    <input type="tel" name="phone" id="f-phone" required placeholder="+91 9876543210">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email (optional)</label>
-                    <input type="email" name="email" id="f-email" placeholder="youremail@example.com">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Department *</label>
+                    <label class="form-label" data-lang="department">Department *</label>
                     <select id="f-department" required>
                         <option value="">Select Department</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Person to Meet *</label>
+                    <label class="form-label" data-lang="person_to_meet">Person to Meet *</label>
                     <select id="f-staff" required>
                         <option value="">Select Staff</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Purpose of Visit *</label>
-                    <select name="purpose" id="f-purpose" required>
-                        <option value="">Select Purpose</option>
-                        <option>Admission Enquiry</option>
-                        <option>Meet Staff</option>
-                        <option>Document Submission</option>
-                        <option>Interview</option>
-                        <option>Delivery/Vendor</option>
-                        <option>Other</option>
-                    </select>
-                </div>
 
-                <!-- Dynamic fields from template -->
-                <div id="dynamic-fields"></div>
-
-                <div class="form-group">
-                    <label class="form-label">Additional Notes (optional)</label>
-                    <textarea name="notes" rows="3" placeholder="Any additional information..."></textarea>
+                <!-- 2. Templated Info (Dynamically rendered from Admin Template) -->
+                <div id="dynamic-fields">
+                    <!-- Loading state for fields -->
+                    <div style="text-align:center; padding:20px; color:#64748b; font-size:13px;">
+                        Loading form fields...
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="margin-top:8px" id="submit-btn"
@@ -294,20 +271,21 @@
         const API_BASE = '/api';
 
         async function apiGet(url) {
+            console.log(`[API] GET ${url}`);
             try {
                 const res = await fetch(API_BASE + url);
                 const text = await res.text();
                 try { return JSON.parse(text); }
                 catch (e) {
-                    // Strip PHP warnings/notices from response
                     const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                     if (jsonMatch) return JSON.parse(jsonMatch[0]);
                     throw new Error('Invalid response');
                 }
-            } catch (e) { throw e; }
+            } catch (e) { console.error(`[API] GET ${url} Error:`, e); throw e; }
         }
 
         async function apiPost(url, data) {
+            console.log(`[API] POST ${url}`);
             try {
                 const res = await fetch(API_BASE + url, {
                     method: 'POST',
@@ -321,7 +299,7 @@
                     if (jsonMatch) return JSON.parse(jsonMatch[0]);
                     throw new Error(res.ok ? 'Invalid response' : 'HTTP ' + res.status);
                 }
-            } catch (e) { throw e; }
+            } catch (e) { console.error(`[API] POST ${url} Error:`, e); throw e; }
         }
 
         function getParam(name) {
@@ -330,13 +308,18 @@
 
         let sessionData = null;
 
-        // Load multi-language support
-        const script = document.createElement('script');
-        script.src = 'js/lang.js';
-        script.onload = () => lang.init();
-        document.head.appendChild(script);
-
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('[VISITOR] Page Loaded');
+            
+            // 1. Load language support first
+            const langScript = document.createElement('script');
+            langScript.src = 'js/lang.js';
+            langScript.onload = () => {
+                console.log('[VISITOR] lang.js loaded');
+                if (window.lang) lang.init();
+            };
+            document.head.appendChild(langScript);
+
             const sessionCode = getParam('session');
             const token = getParam('token');
 
@@ -414,24 +397,77 @@
 
         function renderDynamicFields(fields) {
             const container = document.getElementById('dynamic-fields');
-            const skip = ['name', 'phone', 'email', 'department', 'staff_id', 'purpose'];
-            const extra = fields.filter(f => !skip.includes(f.id));
-            container.innerHTML = extra.map(f => {
+            
+            // 1. Define base required fields that the database needs
+            const baseFields = [
+                { id: 'visitor_name', label: 'Full Name', type: 'text', required: true, placeholder: 'Enter your full name' },
+                { id: 'visitor_phone', label: 'Phone Number', type: 'tel', required: true, placeholder: '+91 9876543210' },
+                { id: 'visitor_email', label: 'Email Address', type: 'email', required: false, placeholder: 'youremail@example.com' }
+            ];
+
+            // 2. Filter out template fields that already cover these base fields (by ID or label)
+            const templateFieldIds = fields.map(f => f.id.toLowerCase());
+            const templateFieldLabels = fields.map(f => f.label.toLowerCase());
+            
+            const neededBaseFields = baseFields.filter(bf => 
+                !templateFieldIds.includes(bf.id) && 
+                !templateFieldLabels.includes(bf.label.toLowerCase()) &&
+                !templateFieldLabels.includes('name') && // fuzzy match for name
+                !templateFieldLabels.includes('phone') // fuzzy match for phone
+            );
+
+            // 3. Filter out "Department" and "Staff" from template fields as they are system-managed at the top
+            const finalTemplateFields = fields.filter(f => {
+                const lbl = f.label.toLowerCase();
+                return !lbl.includes('department') && !lbl.includes('person to meet') && !f.id?.includes('staff') && !f.id?.includes('dept');
+            });
+
+            // 4. Combine fields (Base fields first, then filtered Template fields)
+            const allFields = [...neededBaseFields, ...finalTemplateFields];
+
+            container.innerHTML = allFields.map(f => {
                 const req = f.required ? 'required' : '';
+                const nameAttr = f.id || f.label.toLowerCase().replace(/\s+/g, '_');
                 let html = '';
+                
                 switch (f.type) {
                     case 'textarea':
-                        html = '<textarea name="' + f.id + '" placeholder="' + (f.placeholder || '') + '" ' + req + '></textarea>';
+                        html = `<textarea name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}></textarea>`;
                         break;
                     case 'select': case 'dropdown':
-                        html = '<select name="' + f.id + '" ' + req + '><option value="">Select</option>' +
-                            (f.options || []).map(o => '<option>' + o + '</option>').join('') + '</select>';
+                        html = `<select name="${nameAttr}" id="f-${nameAttr}" ${req}><option value="">Select...</option>` +
+                            (f.options || []).map(o => `<option value="${o}">${o}</option>`).join('') + `</select>`;
+                        break;
+                    case 'email':
+                        html = `<input type="email" name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}>`;
+                        break;
+                    case 'tel': case 'phone':
+                        html = `<input type="tel" name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}>`;
                         break;
                     default:
-                        html = '<input type="' + (f.type || 'text') + '" name="' + f.id + '" placeholder="' + (f.placeholder || '') + '" ' + req + '>';
+                        html = `<input type="${f.type || 'text'}" name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}>`;
                 }
-                return '<div class="form-group"><label class="form-label">' + f.label + (f.required ? ' *' : '') + '</label>' + html + '</div>';
+                return `<div class="form-group"><label class="form-label">${f.label}${f.required ? ' *' : ''}</label>${html}</div>`;
             }).join('');
+            
+            // Special case: Purpose of visit (if not in template, add it)
+            if (!templateFieldLabels.includes('purpose')) {
+                const purposeHtml = `
+                    <div class="form-group">
+                        <label class="form-label">Purpose of Visit *</label>
+                        <select name="purpose" id="f-purpose" required>
+                            <option value="">Select Purpose</option>
+                            <option>General Visit</option>
+                            <option>Admission Enquiry</option>
+                            <option>Meet Staff</option>
+                            <option>Document Submission</option>
+                            <option>Interview</option>
+                            <option>Delivery/Vendor</option>
+                            <option>Other</option>
+                        </select>
+                    </div>`;
+                container.insertAdjacentHTML('beforeend', purposeHtml);
+            }
         }
 
         async function submitForm(e) {
@@ -441,14 +477,32 @@
             btn.textContent = 'Submitting...';
 
             const formData = Object.fromEntries(new FormData(e.target));
+            
+            // Map values for the database columns
+            // Try to find Name/Phone/Email in the formData by fuzzy keys if core IDs aren't present
+            let visitor_name = formData.visitor_name;
+            let visitor_phone = formData.visitor_phone;
+            let visitor_email = formData.visitor_email || '';
+
+            if (!visitor_name) {
+                // Fuzzy search for name
+                const key = Object.keys(formData).find(k => k.includes('name'));
+                if (key) visitor_name = formData[key];
+            }
+            if (!visitor_phone) {
+                // Fuzzy search for phone
+                const key = Object.keys(formData).find(k => k.includes('phone') || k.includes('mobile'));
+                if (key) visitor_phone = formData[key];
+            }
+
             const payload = {
                 session_id: sessionData.session_id,
-                visitor_name: document.getElementById('f-name').value,
-                visitor_phone: document.getElementById('f-phone').value,
-                visitor_email: document.getElementById('f-email').value || '',
+                visitor_name: visitor_name || 'Visitor',
+                visitor_phone: visitor_phone || '0000000000',
+                visitor_email: visitor_email,
                 department_id: document.getElementById('f-department').value,
                 staff_id: document.getElementById('f-staff').value,
-                form_data: { ...formData, purpose: document.getElementById('f-purpose').value }
+                form_data: formData
             };
 
             try {

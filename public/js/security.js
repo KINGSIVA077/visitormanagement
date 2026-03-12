@@ -2,10 +2,18 @@ let selectedTemplate = null;
 let lastQrData = null;
 const categoryIcons = { parent: '👨‍👩‍👧‍👦', admission: '🎓', vendor: '🚚', meeting: '👔', document: '📄', event: '🎉', other: '➕' };
 
+// Utility functions - extend existing utils from api.js
+window.utils = window.utils || {};
+Object.assign(window.utils, {
+    formatDate: (date) => new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+    formatTime: (date) => new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+});
+
+
 // Get security user ID from auth
 function getSecurityId() {
     const user = window.auth ? auth.getUser() : null;
-    return user ? user.id : 'sec-user-111';
+    return user ? (user.id || user.uid) : 'sec-user-111';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,12 +27,14 @@ async function loadAll() {
     loadInside();
 }
 
-function showSection(id) {
+function showSection(id, ev) {
+    const e = ev || (typeof event !== 'undefined' ? event : null) || window.event;
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById('sec-' + id).classList.add('active');
     document.querySelectorAll('.sidebar .nav a').forEach(a => a.classList.remove('active'));
-    if (event && event.target) {
-        const link = event.target.closest('a');
+    
+    if (e && e.target) {
+        const link = e.target.closest('a');
         if (link) link.classList.add('active');
     }
     if (id === 'categories' && !document.getElementById('category-grid').children.length) loadCategories();
@@ -46,7 +56,14 @@ async function loadStats() {
         document.getElementById('stat-templates').textContent = templates.length;
         document.getElementById('nav-pending-count').textContent = pendingCount;
         document.getElementById('nav-inside-count').textContent = inside.length;
-    } catch (e) { console.error('Stats error:', e); }
+    } catch (e) { 
+        console.error('Stats error:', e); 
+        const errMsg = e && e.message ? String(e.message) : String(e);
+        if (errMsg.includes('401') || errMsg.includes('Authentication')) {
+            if (window.auth) auth.showToast('Session expired. Redirecting to login...', 'error');
+            setTimeout(() => window.location.href = 'login.html', 3000);
+        }
+    }
 }
 
 // ═══ CATEGORIES ═══
@@ -92,7 +109,12 @@ async function generateQR(templateId, category) {
         document.getElementById('home-qr-status').textContent = '🟢 QR Active';
         document.getElementById('home-qr-code').textContent = session.session_code;
         document.getElementById('active-qr-card').style.display = 'block';
-    } catch (e) { console.error('QR error:', e); alert('Failed to generate QR'); }
+        if (window.auth) auth.showToast('QR Code Generated Successfully', 'success');
+    } catch (e) { 
+        console.error('QR error:', e); 
+        if (window.auth) auth.showToast('Failed to generate QR: ' + e.message, 'error');
+        else alert('Failed to generate QR');
+    }
 }
 
 function generateNewQR() {
@@ -124,7 +146,10 @@ async function loadPending() {
                 </div>
             </div>
         `).join('');
-    } catch (e) { console.error('Pending error:', e); }
+    } catch (e) { 
+        console.error('Pending error:', e);
+        if (window.auth) auth.showToast('Failed to load pending requests', 'error');
+    }
 }
 
 function printBadge(requestId) {
@@ -218,10 +243,10 @@ async function doCheckIn(requestId, sessionId) {
             security_id: getSecurityId(),
             gate_location: 'Main Gate'
         });
-        utils.showToast(`✅ Checked in: ${res.visitor_name || 'Visitor'}`, 'success');
+        if (window.auth) auth.showToast(`✅ Checked in: ${res.visitor_name || 'Visitor'}`, 'success');
         loadAll();
     } catch (e) {
-        utils.showToast(e.message || 'Check-in failed', 'error');
+        if (window.auth) auth.showToast(e.message || 'Check-in failed', 'error');
     }
 }
 
@@ -229,10 +254,10 @@ async function doCheckOut(checkinId) {
     if (!confirm('Are you sure you want to check out this visitor?')) return;
     try {
         await api.post('/checkins/' + checkinId + '/checkout', { security_id: getSecurityId() });
-        utils.showToast('🚪 Visitor checked out successfully', 'success');
+        if (window.auth) auth.showToast('🚪 Visitor checked out successfully', 'success');
         loadAll();
     } catch (e) {
-        utils.showToast(e.message || 'Check-out failed', 'error');
+        if (window.auth) auth.showToast(e.message || 'Check-out failed', 'error');
     }
 }
 

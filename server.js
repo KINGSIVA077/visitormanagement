@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 // ═══ CORS — whitelist-based ═══
 const getLanIp = () => {
@@ -133,8 +133,11 @@ function sendEmailLog(db, to, subject, body) {
 app.use(express.static('public'));
 
 // Initialize Database (MySQL)
+const dbHost = process.env.DB_HOST || 'localhost';
+const localHosts = ['localhost', '127.0.0.1', '::1'];
+const isCloudDB = !localHosts.includes(dbHost); // Only true for remote hosts (TiDB, PlanetScale, etc.)
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
+    host: dbHost,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'visitorgate',
@@ -143,7 +146,7 @@ const pool = mysql.createPool({
     queueLimit: 0,
     enableKeepAlive: true,
     keepAliveInitialDelay: 10000,
-    ssl: { rejectUnauthorized: true }
+    ...(isCloudDB ? { ssl: { rejectUnauthorized: true } } : {})
 });
 
 // SQLite-to-MySQL Compatibility Layer
@@ -192,6 +195,15 @@ pool.getConnection((err, conn) => {
         // Auto-add custom_data column to event_registrations if missing
         pool.query(`ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS custom_data JSON DEFAULT NULL`, (e) => {
             if (e && !e.message.includes('Duplicate')) console.warn('[DB] event_registrations.custom_data:', e.message);
+        });
+
+        // Global Reset: Set default password 'admin123' for all staff and security users
+        const defaultHash = crypto.createHash('sha256').update('admin123').digest('hex');
+        pool.query(`UPDATE users SET password_hash = ? WHERE role IN ('staff', 'security')`, [defaultHash], (e, result) => {
+            if (e) console.warn('[DB] Global password reset error:', e.message);
+            else if (result && result.affectedRows > 0) {
+                console.log(`[DB] ✅ Reset ${result.affectedRows} account(s) to default password: admin123 (Roles: staff, security)`);
+            }
         });
     }
 });
@@ -329,9 +341,13 @@ app.post('/api/departments', authMiddleware, adminOnly, (req, res) => {
 
 // Create user
 app.post('/api/users', (req, res) => {
-    const { name, email, phone, department_id, designation, role, staff_id } = req.body;
+    const { name, email, phone, department_id, designation, role, staff_id, password } = req.body;
     if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
     const id = (role || 'staff') + '-' + Date.now();
+
+    // Default password: "admin123" — staff should change it after first login
+    const defaultPassword = password || 'admin123';
+    const passwordHash = crypto.createHash('sha256').update(defaultPassword).digest('hex');
 
     // Auto-generate staff_id if it's staff role and ID is missing
     let finalStaffId = staff_id || null;
@@ -347,8 +363,8 @@ app.post('/api/users', (req, res) => {
     }
 
     function insertUser(sid) {
-        db.run('INSERT INTO users (id, staff_id, email, phone, name, role, department_id, designation, is_active, availability_status) VALUES (?,?,?,?,?,?,?,?,1,"available")',
-            [id, sid, email, phone || '', name, role || 'staff', department_id || '', designation || ''], function (err) {
+        db.run('INSERT INTO users (id, staff_id, email, phone, name, role, department_id, designation, is_active, availability_status, password_hash) VALUES (?,?,?,?,?,?,?,?,1,"available",?)',
+            [id, sid, email, phone || '', name, role || 'staff', department_id || '', designation || '', passwordHash], function (err) {
                 if (err) return res.status(500).json({ error: err.message });
                 res.status(201).json({ id, name, email, role, staff_id: sid });
             });
@@ -417,6 +433,23 @@ app.get('/api/form-templates/:id', (req, res) => {
 
 // Redundant endpoint removed
 
+// Get server info (for detected IP addressing)
+app.get('/api/server-info', (req, res) => {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    let baseUrl = process.env.PUBLIC_URL || `${protocol}://${host}`;
+    
+    // If accessing via localhost, also provide the LAN IP version
+    const lanIp = getLanIp();
+    const lanUrl = `${protocol}://${lanIp}:${port}`;
+
+    res.json({
+        base_url: baseUrl,
+        lan_url: lanUrl,
+        is_local: host.includes('localhost') || host.includes('127.0.0.1')
+    });
+});
+
 // Generate QR session
 app.post('/api/qr-sessions/generate', authMiddleware, asyncHandler(async (req, res) => {
     const { template_id, category, security_id } = req.body;
@@ -430,9 +463,19 @@ app.post('/api/qr-sessions/generate', authMiddleware, asyncHandler(async (req, r
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(); // 6 hours
 
-    // URL that the visitor will visit
-    const lanIp = getLanIp();
-    const visitorUrl = `http://${lanIp}:${port}/visitor.html?session=${sessionCode}&token=${token}`;
+    // URL that the visitor will visit — use the request's own origin so it works on any network
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+    let host = req.headers['x-forwarded-host'] || req.get('host'); // e.g. "visitormanagement-xyz.onrender.com" or "192.168.10.137:3001"
+    
+    // Only apply the LAN IP override if there's no reverse proxy and we're strictly on localhost
+    // (If x-forwarded-host is present, we are deployed behind a proxy, so we trust that host)
+    if (!req.headers['x-forwarded-host'] && (host.includes('localhost') || host.includes('127.0.0.1'))) {
+        const lanIp = getLanIp();
+        host = `${lanIp}:${port}`;
+    }
+
+    const baseUrl = process.env.PUBLIC_URL || `${protocol}://${host}`;
+    const visitorUrl = `${baseUrl}/visitor.html?session=${sessionCode}&token=${token}`;
 
     db.run(`INSERT INTO visitor_sessions (id, session_code, template_id, category, qr_code_url, qr_token, qr_token_hash, status, expires_at, generated_by) 
             VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)`,
