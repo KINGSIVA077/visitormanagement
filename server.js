@@ -268,20 +268,33 @@ app.use(express.static('public'));
 
 // Initialize Database (MySQL)
 const dbHost = process.env.DB_HOST || 'localhost';
+const dbPort = parseInt(process.env.DB_PORT || (dbHost.includes('tidb') ? '4000' : '3306'));
 const localHosts = ['localhost', '127.0.0.1', '::1'];
-const isCloudDB = !localHosts.includes(dbHost); // Only true for remote hosts (TiDB, PlanetScale, etc.)
-const pool = mysql.createPool({
+const isCloudDB = !localHosts.includes(dbHost); 
+
+console.log(`[DB] 🔌 Connecting to ${isCloudDB ? 'CLOUD' : 'LOCAL'} database at ${dbHost}:${dbPort}...`);
+
+const poolConfig = {
     host: dbHost,
+    port: dbPort,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'visitorgate',
     waitForConnections: true,
-    connectionLimit: 20,
+    connectionLimit: 10,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 10000,
-    ...(isCloudDB ? { ssl: { rejectUnauthorized: true } } : {})
-});
+    keepAliveInitialDelay: 10000
+};
+
+if (isCloudDB) {
+    poolConfig.ssl = {
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2'
+    };
+}
+
+const pool = mysql.createPool(poolConfig);
 
 // SQLite-to-MySQL Compatibility Layer
 const db = {
@@ -316,10 +329,14 @@ const db = {
 // Check connection
 pool.getConnection((err, conn) => {
     if (err) {
-        console.error('❌ Error connecting to MySQL (XAMPP):', err.message);
-        console.log('💡 TIP: Make sure XAMPP Apache & MySQL are running and "visitorgate" database exists.');
+        console.error(`❌ [DB] Error connecting to ${isCloudDB ? 'Cloud' : 'Local'} Database:`, err.message);
+        if (isCloudDB) {
+            console.log('💡 TIP: Check your Render environment variables and TiDB Cloud IP whitelist.');
+        } else {
+            console.log('💡 TIP: Make sure XAMPP Apache & MySQL are running.');
+        }
     } else {
-        console.log('✅ Connected to local MySQL (XAMPP).');
+        console.log(`✅ [DB] Successfully connected to ${isCloudDB ? 'TiDB Cloud' : 'Local MySQL'}.`);
         conn.release();
 
         // Auto-add custom_fields column to events if missing
