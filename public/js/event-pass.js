@@ -45,17 +45,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (reg.approval_status === 'APPROVED') {
             badge.className = 'pass-status approved';
-            statusIcon.textContent = '✅';
+            statusIcon.innerHTML = '<i data-lucide="check-circle" style="width:20px;height:20px"></i>';
             statusText.textContent = 'APPROVED';
         } else if (reg.approval_status === 'REJECTED') {
             badge.className = 'pass-status rejected';
-            statusIcon.textContent = '❌';
+            statusIcon.innerHTML = '<i data-lucide="x-circle" style="width:20px;height:20px"></i>';
             statusText.textContent = 'REJECTED';
         } else {
             badge.className = 'pass-status pending';
-            statusIcon.textContent = '⏳';
+            statusIcon.innerHTML = '<i data-lucide="clock" style="width:20px;height:20px"></i>';
             statusText.textContent = 'PENDING';
         }
+        lucide.createIcons();
 
         // Generate QR code for the pass token (security scans this)
         const passVerifyUrl = window.location.origin + '/event-pass.html?token=' + token;

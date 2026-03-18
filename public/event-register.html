@@ -4,241 +4,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Registration - VisitorGate</title>
+    <title>Event Registration — VisitorGate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0a0e1a;
-            color: #f1f5f9;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
         .visitor-page {
             max-width: 520px;
             margin: 0 auto;
         }
 
-        .brand {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 700;
-            color: #6366f1;
-            padding: 16px 0;
-        }
-
-        .card {
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(12px);
-        }
-
-        h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        h3 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: #94a3b8;
-            margin-bottom: 6px;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px 16px;
-            background: #111827;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: #f1f5f9;
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            transition: border 0.2s;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: #6366f1;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: #6366f1;
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background: #4f46e5;
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .text-xs {
-            font-size: 12px;
-        }
-
-        .text-sm {
-            font-size: 13px;
-        }
-
-        .text-muted {
-            color: #64748b;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .mb-8 {
-            margin-bottom: 8px;
-        }
-
-        .mb-20 {
-            margin-bottom: 20px;
-        }
-
         .event-banner {
-            background: linear-gradient(135deg, #4338ca, #6366f1);
+            background: var(--primary);
             border: none;
             color: #fff;
-            padding: 28px;
-        }
-
-        .event-banner .tag {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.8;
-            margin-bottom: 8px;
-        }
-
-        .event-banner .meta {
+            padding: 40px 32px;
+            position: relative;
+            overflow: hidden;
             display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            font-size: 13px;
-            margin-top: 16px;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .event-banner::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .evt-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--teal-accent, #2dd4bf);
+            background: rgba(45, 212, 191, 0.1);
+            padding: 4px 12px;
+            border-radius: 999px;
+            width: fit-content;
+        }
+
+        .evt-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+
+        .evt-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8125rem;
+            opacity: 0.9;
+        }
+
+        .meta-item i {
+            width: 14px;
+            height: 14px;
+            color: var(--teal-accent, #2dd4bf);
+        }
+
+        .registration-card {
+            margin-top: -20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .form-header {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
         }
 
         #loading-view {
             text-align: center;
-            padding: 60px 20px;
+            padding: 80px 20px;
         }
 
-        .spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(99, 102, 241, 0.2);
-            border-top-color: #6366f1;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .success-box-status {
+            background: var(--gray-50);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .error-box {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            display: none;
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(30, 58, 95, 0.2); }
+            70% { box-shadow: 0 0 0 10px rgba(30, 58, 95, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(30, 58, 95, 0); }
         }
 
-        .success-box {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
+        .pulse-status {
+            animation: pulse-ring 2s infinite;
+        }
+
+        /* Event Selection List Styles */
+        .event-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .event-selection-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
             padding: 16px;
-            border-radius: 10px;
-            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .event-selection-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.08);
+            background: var(--primary-bg);
+        }
+
+        .event-selection-card .evt-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .event-selection-card .evt-info {
+            flex: 1;
+        }
+
+        .event-selection-card .evt-name-small {
+            font-weight: 700;
+            font-size: 0.9375rem;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .event-selection-card .evt-date-small {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
     </style>
 </head>
 
-<body>
+<body class="bg-dark" style="min-height: 100vh; padding: 20px">
     <div class="visitor-page">
-        <div class="brand">🛡️ VisitorGate</div>
+        <div class="brand mb-24">
+            <i data-lucide="shield-check" style="color:var(--primary)"></i>
+            VisitorGate
+        </div>
 
         <!-- LOADING VIEW -->
         <div id="loading-view" class="card">
-            <div class="spinner"></div>
-            <p style="margin-top:16px;color:#94a3b8;text-align:center">Loading event details...</p>
+            <div class="spinner mb-20"></div>
+            <p class="text-sm text-muted">Retrieving event information...</p>
+        </div>
+
+        <!-- EVENT SELECTION VIEW (Fallback) -->
+        <div id="selection-view" class="animate-slide" style="display:none">
+            <div class="card mb-20" style="padding: 24px;">
+                <h2 style="font-size:1.25rem; font-weight:800; letter-spacing:-0.02em">Select an Event</h2>
+                <p class="text-sm text-muted mt-4">We found multiple active events. Please select the one you're attending.</p>
+            </div>
+            <div id="event-list" class="event-grid"></div>
         </div>
 
         <!-- ERROR VIEW -->
-        <div id="error-view" class="card" style="display:none;text-align:center;padding:48px">
-            <div style="font-size:56px;margin-bottom:20px">⚠️</div>
-            <h2>Invalid Event Link</h2>
-            <p id="error-msg" style="margin-top:12px;color:#94a3b8">This event link is invalid or expired.</p>
+        <div id="error-view" class="card animate-fade" style="display:none; text-align:center; padding:60px 40px">
+            <div class="status-header-icon" style="background:var(--red-bg); color:var(--red); width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px">
+                <i data-lucide="alert-triangle" style="width:32px; height:32px"></i>
+            </div>
+            <h2 style="font-size:1.25rem">Invalid Link</h2>
+            <p id="error-msg" class="text-secondary mt-12 text-sm">This event link is no longer valid or has expired.</p>
+            <a href="index.html" class="btn btn-ghost btn-sm mt-24">Return Home</a>
         </div>
 
         <!-- EVENT INFO + FORM -->
-        <div id="form-view" style="display:none">
+        <div id="form-view" class="animate-slide" style="display:none">
             <!-- Event Banner -->
             <div class="card event-banner">
-                <div class="tag">📅 EVENT</div>
-                <h2 id="evt-name" style="margin-bottom:8px;font-size:22px"></h2>
-                <p id="evt-desc" style="opacity:0.8;font-size:13px"></p>
-                <div class="meta">
-                    <span>📅 <span id="evt-date"></span></span>
-                    <span>⏰ <span id="evt-time"></span></span>
-                    <span>📍 <span id="evt-venue"></span></span>
+                <div class="evt-tag">Upcoming Event</div>
+                <h2 id="evt-name" class="evt-title"></h2>
+                <p id="evt-desc" class="text-sm" style="opacity:0.8; max-width:90%"></p>
+                
+                <div class="evt-meta">
+                    <div class="meta-item">
+                        <i data-lucide="calendar"></i>
+                        <span id="evt-date"></span>
+                    </div>
+                    <div class="meta-item">
+                        <i data-lucide="clock"></i>
+                        <span id="evt-time"></span>
+                    </div>
+                    <div class="meta-item">
+                        <i data-lucide="map-pin"></i>
+                        <span id="evt-venue"></span>
+                    </div>
                 </div>
             </div>
 
             <!-- Registration Form -->
-            <div class="card">
-                <h3 class="mb-8">Register for this Event</h3>
-                <p class="mb-20 text-sm text-muted">Fill in your details. You'll receive a Virtual ID Pass once
-                    approved.</p>
+            <div class="card registration-card">
+                <div class="form-header">
+                    <h3 style="font-size:1.125rem">Event Registration</h3>
+                    <p class="text-xs text-muted mt-4">Secure your spot. All registrations are reviewed for approval.</p>
+                </div>
 
                 <div id="form-error" class="error-box"></div>
 
@@ -246,66 +255,58 @@
                     <!-- Dynamic fields rendered here -->
                     <div id="dynamic-fields"></div>
 
-                    <button type="submit" class="btn btn-primary" style="margin-top:8px" id="submit-btn">
-                        📝 Register for Event
+                    <button type="submit" class="btn btn-primary btn-lg w-100" style="margin-top:12px" id="submit-btn">
+                        <i data-lucide="edit-3" style="width:18px; height:18px"></i>
+                        Complete Registration
                     </button>
 
-                    <p class="text-xs text-muted text-center" style="margin-top:16px">
-                        🔒 Your data is secure. You'll receive a Virtual ID Pass via email upon approval.
-                    </p>
+                    <div class="mt-24 pt-20" style="border-top:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:8px">
+                         <i data-lucide="lock" style="width:12px; height:12px; color:var(--text-muted)"></i>
+                         <p class="text-xs text-muted">Your registration details are protected.</p>
+                    </div>
                 </form>
             </div>
         </div>
 
         <!-- SUCCESS VIEW -->
-        <div id="success-view" class="card" style="display:none;text-align:center;padding:48px">
-            <div style="font-size:56px;margin-bottom:20px">✅</div>
-            <h2>Registration Submitted!</h2>
-            <p style="margin-top:12px;line-height:1.8;color:#94a3b8">
-                Your registration has been submitted.<br>
-                You will receive an email with your <b>Virtual ID Pass</b> once approved.
-            </p>
-            <div class="success-box" style="margin-top:24px">
-                Status: ⏳ PENDING APPROVAL
+        <div id="success-view" class="card animate-scale" style="display:none; text-align:center; padding:60px 40px">
+            <div style="background:var(--green-bg); color:var(--green); width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 24px">
+                <i data-lucide="check-circle" style="width:36px; height:36px"></i>
             </div>
+            <h2 style="font-size:1.5rem">Registration Received</h2>
+            <p class="text-secondary mt-12 text-sm" style="line-height:1.6">
+                Your details have been submitted for review. You will receive an email with your <span class="fw-700">Virtual ID Pass</span> once approved.
+            </p>
+
+            <div class="success-box-status">
+                <span class="text-xs text-muted uppercase fw-700 tracking-wider">Current Status</span>
+                <div id="status-display-pill" class="status-pill badge-yellow pulse-status">
+                    <i data-lucide="timer" style="width:14px; height:14px"></i>
+                    Pending Approval
+                </div>
+            </div>
+
             <div id="status-qr-container" style="margin-top:32px; display:none">
-                <p class="text-xs text-muted mb-8">Scan to track your registration status:</p>
-                <img id="status-qr-img" style="width:160px; height:160px; border-radius:12px; border:4px solid #fff">
-                <p id="status-qr-url" class="text-xs text-muted mt-8" style="word-break:break-all; opacity:0.6"></p>
+                <p class="text-xs text-muted mb-12">Track your registration status:</p>
+                <div style="padding:12px; border:1px dashed var(--border); border-radius:var(--radius-lg); display:inline-block; background:var(--gray-50)">
+                    <img id="status-qr-img" style="width:150px; height:150px; display:block">
+                </div>
             </div>
-            <p class="text-xs text-muted" style="margin-top:20px">
-                Please check your email regularly for the approval notification.
-            </p>
+
+            <div class="mt-32 pt-24" style="border-top:1px solid var(--border)">
+                <p class="text-xs text-muted">A notification will also be sent to your phone once a decision is made.</p>
+            </div>
+        </div>
+
+        <div class="text-center mt-32">
+            <p class="text-xs text-muted">© 2026 VisitorGate Event Solutions</p>
         </div>
     </div>
 
+    <script src="js/api.js"></script>
     <script>
-        const API_BASE = '/api';
-
-        async function apiGet(url) {
-            const res = await fetch(API_BASE + url);
-            const text = await res.text();
-            try { return JSON.parse(text); }
-            catch (e) {
-                const m = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                if (m) return JSON.parse(m[0]);
-                throw new Error('Invalid response');
-            }
-        }
-
-        async function apiPost(url, data) {
-            const res = await fetch(API_BASE + url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const text = await res.text();
-            try { return JSON.parse(text); }
-            catch (e) {
-                const m = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                if (m) { const parsed = JSON.parse(m[0]); if (parsed.error) throw new Error(parsed.error); return parsed; }
-                throw new Error(res.ok ? 'Invalid response' : 'HTTP ' + res.status);
-            }
+        function getParam(name) {
+            return new URLSearchParams(window.location.search).get(name);
         }
 
         function getParam(name) {
@@ -314,7 +315,6 @@
 
         let eventData = null;
 
-        // Build input element for a custom field definition
         function renderField(field, index) {
             const id = 'cf-' + index;
             const req = field.required ? 'required' : '';
@@ -323,11 +323,11 @@
             let input = '';
             switch (field.type) {
                 case 'textarea':
-                    input = `<textarea id="${id}" ${req} placeholder="${ph}" rows="3"></textarea>`;
+                    input = `<textarea id="${id}" ${req} placeholder="${ph}" style="min-height:100px"></textarea>`;
                     break;
                 case 'select':
                     const opts = (field.options || []).map(o => `<option value="${o}">${o}</option>`).join('');
-                    input = `<select id="${id}" ${req}><option value="">Select...</option>${opts}</select>`;
+                    input = `<select id="${id}" ${req}><option value="">Choose an option...</option>${opts}</select>`;
                     break;
                 case 'email':
                     input = `<input type="email" id="${id}" ${req} placeholder="${ph}">`;
@@ -339,88 +339,116 @@
                     input = `<input type="tel" id="${id}" ${req} placeholder="${ph}">`;
                     break;
                 default:
-                    input = `<input type="text" id="${id}" ${req} placeholder="${ph}">`;
+                    input = `<input type="${field.type || 'text'}" id="${id}" ${req} placeholder="${ph}">`;
             }
 
             return `
                 <div class="form-group">
-                    <label class="form-label">${field.label}${field.required ? ' *' : ''}</label>
+                    <label class="form-label">${field.label}${field.required ? ' <span style="color:var(--red)">*</span>' : ''}</label>
                     ${input}
                 </div>
             `;
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
             const eventToken = getParam('event');
+            const sessionCode = getParam('session');
+            const token = getParam('token');
 
-            if (!eventToken) {
-                showError('Missing event token. Please scan the event QR code.');
+            if (!eventToken && (!sessionCode || !token)) {
+                // Fallback: Show all active events
+                try {
+                    const events = await api.get('/events');
+                    const activeEvents = Array.isArray(events) ? events.filter(e => e.status === 'ACTIVE') : [];
+                    
+                    if (activeEvents.length === 0) {
+                        showError('No active events found. Please contact the organizers.');
+                        return;
+                    }
+                    
+                    if (activeEvents.length === 1) {
+                        window.location.href = `event-register.html?event=${activeEvents[0].qr_token}`;
+                        return;
+                    }
+
+                    renderEventList(activeEvents);
+                } catch (e) {
+                    showError('Unable to load events. Please try again later.');
+                }
                 return;
             }
 
             try {
-                const event = await apiGet('/events/by-token/' + eventToken);
-
-                if (!event || event.error) {
-                    showError(event?.error || 'Event not found or expired.');
-                    return;
-                }
-
-                eventData = event;
-
-                document.getElementById('evt-name').textContent = event.name;
-                document.getElementById('evt-desc').textContent = event.description || '';
-                document.getElementById('evt-date').textContent = event.event_date ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBA';
-                document.getElementById('evt-time').textContent = event.event_time || 'TBA';
-                document.getElementById('evt-venue').textContent = event.venue || 'TBA';
-
-                // Render dynamic fields
-                let fields = event.custom_fields;
-                if (typeof fields === 'string') { try { fields = JSON.parse(fields); } catch (e) { fields = null; } }
-
-                const container = document.getElementById('dynamic-fields');
-                if (fields && Array.isArray(fields) && fields.length > 0) {
-                    container.innerHTML = fields.map((f, i) => renderField(f, i)).join('');
-                } else {
-                    // Fallback: show default hardcoded fields if no custom fields defined
-                    container.innerHTML = `
-                        <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="cf-0" required placeholder="Enter your full name"></div>
-                        <div class="form-group"><label class="form-label">Email Address *</label><input type="email" id="cf-1" required placeholder="your.email@example.com"></div>
-                        <div class="form-group"><label class="form-label">Phone Number *</label><input type="tel" id="cf-2" required placeholder="+91 9876543210"></div>
-                        <div class="form-group"><label class="form-label">Organization / College</label><input type="text" id="cf-3" placeholder="Your organization name"></div>
-                        <div class="form-group"><label class="form-label">Designation / Role</label><input type="text" id="cf-4" placeholder="e.g. Student, Professor, etc."></div>
-                    `;
-                    // Also set fallback field definitions for submit
-                    eventData._fallback_fields = [
-                        { label: 'Full Name' }, { label: 'Email Address' }, { label: 'Phone Number' },
-                        { label: 'Organization / College' }, { label: 'Designation / Role' }
-                    ];
+                if (sessionCode && token) {
+                    const result = await api.post('/qr-sessions/validate', { session_code: sessionCode, token });
+                    if (!result.valid) { showError('Invalid or expired QR session.'); return; }
+                    
+                    if (result.category === 'event' && result.template_id) {
+                        const event = await api.get('/events/' + result.template_id);
+                        if (!event || event.error) { showError('Linked event not found.'); return; }
+                        eventData = event;
+                        renderEventDetails(event);
+                    } else {
+                        showError('This QR code is not for event registration.');
+                        return;
+                    }
+                } else if (eventToken) {
+                    const event = await api.get('/events/by-token/' + eventToken);
+                    if (!event || event.error) {
+                        showError(event?.error || 'Event not found or has concluded.');
+                        return;
+                    }
+                    eventData = event;
+                    renderEventDetails(event);
                 }
 
                 document.getElementById('loading-view').style.display = 'none';
                 document.getElementById('form-view').style.display = 'block';
+                lucide.createIcons();
 
             } catch (e) {
-                console.error('Event load error:', e);
-                showError(e.message || 'Unable to load event. The link may be expired.');
+                console.error('Event registration error:', e);
+                showError(e.message || 'Unable to connect to service.');
             }
 
             document.getElementById('event-form').addEventListener('submit', submitForm);
         });
 
+        function renderEventDetails(event) {
+            document.getElementById('evt-name').textContent = event.name;
+            document.getElementById('evt-desc').textContent = event.description || 'Join us for this upcoming event.';
+            document.getElementById('evt-date').textContent = event.event_date ? new Date(event.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBA';
+            document.getElementById('evt-time').textContent = event.event_time || 'Time TBA';
+            document.getElementById('evt-venue').textContent = event.venue || 'Venue TBA';
+
+            let fields = event.custom_fields;
+            if (typeof fields === 'string') { try { fields = JSON.parse(fields); } catch (e) { fields = null; } }
+
+            const container = document.getElementById('dynamic-fields');
+            if (fields && Array.isArray(fields) && fields.length > 0) {
+                container.innerHTML = fields.map((f, i) => renderField(f, i)).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="form-group"><label class="form-label">Full Name <span style="color:var(--red)">*</span></label><input type="text" id="cf-0" required placeholder="Enter your full name"></div>
+                    <div class="form-group"><label class="form-label">Email Address <span style="color:var(--red)">*</span></label><input type="email" id="cf-1" required placeholder="your.email@example.com"></div>
+                    <div class="form-group"><label class="form-label">Phone Number <span style="color:var(--red)">*</span></label><input type="tel" id="cf-2" required placeholder="+91 9876543210"></div>
+                `;
+                eventData._fallback_fields = [{ label: 'Full Name' }, { label: 'Email Address' }, { label: 'Phone Number' }];
+            }
+        }
+
         async function submitForm(e) {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
+            const originalHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.textContent = 'Submitting...';
+            btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></span> Processing...';
 
             try {
-                // Collect field values
                 let fields = eventData.custom_fields;
                 if (typeof fields === 'string') { try { fields = JSON.parse(fields); } catch (ex) { fields = null; } }
-                if (!fields || !Array.isArray(fields)) {
-                    fields = eventData._fallback_fields || [];
-                }
+                if (!fields || !Array.isArray(fields)) { fields = eventData._fallback_fields || []; }
 
                 const custom_data = {};
                 let visitor_name = '', visitor_email = '', visitor_phone = '', organization = '', designation = '';
@@ -430,18 +458,17 @@
                     const value = el ? el.value.trim() : '';
                     custom_data[f.label] = value;
 
-                    // Map well-known fields to fixed columns
                     const lbl = f.label.toLowerCase();
                     if (lbl.includes('name') && !lbl.includes('org')) visitor_name = value;
                     if (lbl.includes('email')) visitor_email = value;
                     if (lbl.includes('phone')) visitor_phone = value;
-                    if (lbl.includes('organization') || lbl.includes('college') || lbl.includes('company')) organization = value;
-                    if (lbl.includes('designation') || lbl.includes('role') || lbl.includes('title')) designation = value;
+                    if (lbl.includes('affiliation') || lbl.includes('college') || lbl.includes('organization') || lbl.includes('company')) organization = value;
+                    if (lbl.includes('role') || lbl.includes('designation')) designation = value;
                 });
 
-                if (!visitor_name) visitor_name = Object.values(custom_data)[0] || 'Visitor';
+                if (!visitor_name) visitor_name = Object.values(custom_data)[0] || 'Attendee';
 
-                const res = await apiPost('/event-registrations', {
+                const res = await api.post('/event-registrations', {
                     event_id: eventData.id,
                     visitor_name,
                     visitor_email,
@@ -453,16 +480,27 @@
 
                 document.getElementById('form-view').style.display = 'none';
                 document.getElementById('success-view').style.display = 'block';
+                lucide.createIcons();
 
                 if (res && res.id) {
+                    try {
+                        let baseUrl = window.location.origin;
+                        const statusUrl = `${baseUrl}/event-status.html?reg=${res.id}`;
+                        const qrRes = await api.get('/qr/generate?url=' + encodeURIComponent(statusUrl));
+                        if (qrRes && qrRes.qr_image) {
+                            document.getElementById('status-qr-img').src = qrRes.qr_image;
+                            document.getElementById('status-qr-container').style.display = 'block';
+                        }
+                    } catch (e) { console.warn('Status QR failed:', e); }
                     startStatusPolling(res.id);
                 }
             } catch (err) {
                 const errEl = document.getElementById('form-error');
-                errEl.textContent = err.message || 'Registration failed. Please try again.';
+                errEl.textContent = err.message || 'Submission failed. Please check the form and try again.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
-                btn.textContent = '📝 Register for Event';
+                btn.innerHTML = originalHtml;
+                lucide.createIcons();
             }
         }
 
@@ -472,46 +510,65 @@
 
             pollingInterval = setInterval(async () => {
                 try {
-                    const status = await apiGet('/event-registrations/status/' + regId);
+                    const status = await api.get('/event-registrations/status/' + regId);
+                    const pill = document.getElementById('status-display-pill');
+                    
                     if (status && status.approval_status === 'APPROVED') {
                         clearInterval(pollingInterval);
-                        updateSuccessToApproved(status);
+                        pill.className = 'status-pill badge-green';
+                        pill.innerHTML = '<i data-lucide="check-circle" style="width:14px;height:14px"></i> APPROVED';
+                        pill.classList.remove('pulse-status');
+                        
+                        const actionBox = document.createElement('div');
+                        actionBox.style.marginTop = '24px';
+                        actionBox.innerHTML = `
+                            <a href="/event-pass.html?token=${status.pass_token}" class="btn btn-primary animate-fade">
+                                <i data-lucide="ticket"></i> View Digital Pass
+                            </a>
+                        `;
+                        document.getElementById('success-view').appendChild(actionBox);
+                        lucide.createIcons();
                     } else if (status && status.approval_status === 'REJECTED') {
                         clearInterval(pollingInterval);
-                        updateSuccessToRejected(status);
+                        pill.className = 'status-pill badge-red';
+                        pill.innerHTML = '<i data-lucide="x-circle" style="width:14px;height:14px"></i> REGISTRATION DECLINED';
+                        pill.classList.remove('pulse-status');
+                        lucide.createIcons();
                     }
-                } catch (e) { console.warn('Polling error:', e); }
-            }, 3000);
-        }
-
-        function updateSuccessToApproved(data) {
-            const successBox = document.querySelector('.success-box');
-            successBox.innerHTML = 'Status: ✅ APPROVED';
-            successBox.style.background = 'rgba(16, 185, 129, 0.2)';
-            successBox.style.color = '#10b981';
-
-            const btnContainer = document.createElement('div');
-            btnContainer.style.marginTop = '24px';
-            btnContainer.innerHTML = `
-                <a href="/event-pass.html?token=${data.pass_token}" class="btn btn-primary" style="display:inline-block; text-decoration:none">
-                    🎟️ View Virtual ID Pass
-                </a>
-            `;
-            document.getElementById('success-view').appendChild(btnContainer);
-        }
-
-        function updateSuccessToRejected(data) {
-            const successBox = document.querySelector('.success-box');
-            successBox.innerHTML = 'Status: ❌ REJECTED';
-            successBox.style.background = 'rgba(239, 68, 68, 0.2)';
-            successBox.style.color = '#ef4444';
+                } catch (e) { console.warn('Status check error:', e); }
+            }, 5000);
         }
 
         function showError(msg) {
             document.getElementById('loading-view').style.display = 'none';
             document.getElementById('form-view').style.display = 'none';
+            document.getElementById('selection-view').style.display = 'none';
             if (msg) document.getElementById('error-msg').textContent = msg;
             document.getElementById('error-view').style.display = 'block';
+            lucide.createIcons();
+        }
+
+        function renderEventList(events) {
+            document.getElementById('loading-view').style.display = 'none';
+            const container = document.getElementById('event-list');
+            container.innerHTML = events.map(e => `
+                <div class="card event-selection-card" onclick="window.location.href='event-register.html?event=${e.qr_token}'">
+                    <div class="evt-icon">
+                        <i data-lucide="calendar"></i>
+                    </div>
+                    <div class="evt-info">
+                        <span class="evt-name-small">${e.name}</span>
+                        <div class="evt-date-small">
+                            <i data-lucide="map-pin" style="width:12px; height:12px"></i> ${e.venue || 'Venue TBA'}
+                            <span style="margin: 0 4px">•</span>
+                            <i data-lucide="clock" style="width:12px; height:12px"></i> ${e.event_date ? new Date(e.event_date).toLocaleDateString('en-IN', {day:'numeric', month:'short'}) : 'Date TBA'}
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" style="width:18px; height:18px; color:var(--text-muted)"></i>
+                </div>
+            `).join('');
+            document.getElementById('selection-view').style.display = 'block';
+            lucide.createIcons();
         }
     </script>
 </body>

@@ -4,77 +4,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Registration Status - VisitorGate</title>
+    <title>Registration Status — VisitorGate</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .status-card {
             text-align: center;
-            padding: 40px;
+            padding: 48px 32px;
         }
 
-        .status-icon {
-            font-size: 64px;
-            margin-bottom: 24px;
+        .status-header-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            background: var(--primary-bg);
+            color: var(--primary);
         }
 
-        .status-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin-top: 16px;
+        .status-header-icon svg {
+            width: 40px;
+            height: 40px;
         }
 
-        .pending {
-            background: var(--yellow-bg);
-            color: var(--yellow);
+        .status-pill-lg {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 999px;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 24px;
         }
 
-        .approved {
-            background: var(--green-bg);
-            color: var(--green);
+        .info-box {
+            margin-top: 32px;
+            padding: 24px;
+            background: var(--gray-50);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            text-align: left;
         }
 
-        .rejected {
-            background: var(--red-bg);
-            color: var(--red);
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(30, 58, 95, 0.2); }
+            70% { box-shadow: 0 0 0 10px rgba(30, 58, 95, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(30, 58, 95, 0); }
+        }
+
+        .pulse-status {
+            animation: pulse-ring 2s infinite;
         }
     </style>
 </head>
 
 <body class="bg-dark flex-center" style="min-height:100vh; padding: 20px">
     <div class="visitor-page">
-        <div class="brand">🛡️ VisitorGate</div>
-
-        <div id="loading" class="card text-center" style="padding:48px">
-            <div class="pulse" style="font-size:48px">⏳</div>
-            <p class="mt-16 text-muted">Checking registration status...</p>
+        <div class="brand mb-24" style="justify-content: center;">
+            <i data-lucide="shield-check" style="color:var(--primary)"></i>
+            VisitorGate
         </div>
 
-        <div id="status-view" class="card status-card" style="display:none">
-            <div id="s-icon" class="status-icon">⏳</div>
-            <h2 id="s-title">Registration Pending</h2>
-            <p id="s-msg" class="text-muted mt-8">Your registration for the event is being reviewed.</p>
-            <div id="s-badge" class="status-badge pending">PENDING</div>
+        <!-- LOADING STATE -->
+        <div id="loading" class="card text-center" style="padding:60px 40px">
+            <div class="spinner mb-20"></div>
+            <p class="text-sm text-muted">Retrieving your registration status...</p>
+        </div>
 
-            <div id="approved-info"
-                style="display:none; margin-top:32px; padding-top:24px; border-top:1px solid var(--border)">
-                <p class="text-sm">You have been approved for the event!</p>
-                <a id="pass-link" href="#" class="btn btn-primary mt-16" style="display:inline-block; width:auto">🎟️
-                    View Virtual ID Pass</a>
+        <!-- STATUS VIEW -->
+        <div id="status-view" class="card status-card animate-slide" style="display:none">
+            <div id="s-icon-box" class="status-header-icon">
+                <i data-lucide="clock" id="s-lucide-icon"></i>
             </div>
+            
+            <h2 id="s-title" style="font-size:1.5rem; letter-spacing:-0.02em">Registration Pending</h2>
+            <p id="s-msg" class="text-secondary mt-12 text-sm">We are currently reviewing your event registration request.</p>
+            
+            <div id="s-badge" class="status-pill-lg badge-yellow pulse-status">
+                <i data-lucide="timer" style="width:16px; height:16px"></i>
+                PENDING
+            </div>
+
+            <!-- APPROVED ADDITIONAL INFO -->
+            <div id="approved-info" style="display:none; margin-top:32px; padding-top:28px; border-top:1px solid var(--border)">
+                <div class="info-box">
+                    <h4 class="text-sm fw-700 color-primary mb-8" style="color:var(--primary); display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="party-popper" style="width:18px; height:18px"></i>
+                        You're Approved!
+                    </h4>
+                    <p class="text-xs text-secondary leading-relaxed">
+                        Your registration has been confirmed. You can now access your digital pass to enter the event venue.
+                    </p>
+                    <a id="pass-link" href="#" class="btn btn-primary w-100 mt-20">
+                        <i data-lucide="ticket" style="width:18px; height:18px"></i>
+                        View Digital ID Pass
+                    </a>
+                </div>
+            </div>
+
+            <div id="rejected-info" style="display:none; margin-top:24px;">
+                 <p class="text-xs text-muted">If you believe this is a mistake, please reach out to the event organizers.</p>
+            </div>
+        </div>
+
+        <div class="text-center mt-32">
+            <p class="text-xs text-muted">© 2026 VisitorGate Event Management</p>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script>
         async function checkStatus() {
+            lucide.createIcons();
             const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
+            const id = urlParams.get('id') || urlParams.get('reg');
             const token = urlParams.get('token') || urlParams.get('t');
 
             if (!id && !token) {
-                document.getElementById('loading').innerHTML = '<h3>Invalid Link</h3><p class="text-muted mt-8">Missing registration ID or token.</p>';
+                document.getElementById('loading').innerHTML = `
+                    <div class="status-header-icon" style="background:var(--red-bg); color:var(--red)">
+                        <i data-lucide="alert-triangle"></i>
+                    </div>
+                    <h3 style="font-size:1.125rem">Invalid Status Link</h3>
+                    <p class="text-muted mt-8 text-sm">Missing registration reference.</p>
+                `;
+                lucide.createIcons();
                 return;
             }
 
@@ -83,47 +143,81 @@
                 const res = await api.get(endpoint);
 
                 if (!res || res.error) {
-                    document.getElementById('loading').innerHTML = '<h3>Not Found</h3><p class="text-muted mt-8">Registration data not found.</p>';
+                    document.getElementById('loading').innerHTML = `
+                        <div class="status-header-icon" style="background:var(--red-bg); color:var(--red)">
+                            <i data-lucide="search-x"></i>
+                        </div>
+                        <h3 style="font-size:1.125rem">Registration Not Found</h3>
+                        <p class="text-muted mt-8 text-sm">We couldn't find any record for this link.</p>
+                    `;
+                    lucide.createIcons();
                     return;
                 }
 
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('status-view').style.display = 'block';
+                const statusView = document.getElementById('status-view');
+                statusView.style.display = 'block';
 
-                const icon = document.getElementById('s-icon');
+                const iconBox = document.getElementById('s-icon-box');
+                const lucideIcon = document.getElementById('s-lucide-icon');
                 const title = document.getElementById('s-title');
                 const msg = document.getElementById('s-msg');
                 const badge = document.getElementById('s-badge');
 
                 if (res.approval_status === 'APPROVED') {
-                    icon.textContent = '✅';
-                    title.textContent = 'Registration Approved!';
-                    msg.textContent = 'You are set for the event. Click below to view your pass.';
-                    badge.textContent = 'APPROVED';
-                    badge.className = 'status-badge approved';
+                    iconBox.style.background = 'var(--green-bg)';
+                    iconBox.style.color = 'var(--green)';
+                    lucideIcon.setAttribute('data-lucide', 'check-circle');
+                    title.textContent = 'Registration Confirmed';
+                    msg.innerHTML = `Great news! Your registration for <span class="fw-700">${res.event_name}</span> has been approved.`;
+                    badge.innerHTML = '<i data-lucide="check" style="width:14px; height:14px"></i> APPROVED';
+                    badge.className = 'status-pill-lg badge-green';
+                    badge.classList.remove('pulse-status');
                     document.getElementById('approved-info').style.display = 'block';
+                    document.getElementById('rejected-info').style.display = 'none';
                     document.getElementById('pass-link').href = 'event-pass.html?token=' + res.pass_token;
                 } else if (res.approval_status === 'REJECTED') {
-                    icon.textContent = '❌';
-                    title.textContent = 'Registration Rejected';
-                    msg.textContent = 'Sorry, your registration was not approved.';
-                    badge.textContent = 'REJECTED';
-                    badge.className = 'status-badge rejected';
+                    iconBox.style.background = 'var(--red-bg)';
+                    iconBox.style.color = 'var(--red)';
+                    lucideIcon.setAttribute('data-lucide', 'x-circle');
+                    title.textContent = 'Registration Declined';
+                    msg.innerHTML = `Unfortunately, your registration for for <span class="fw-700">${res.event_name}</span> was not approved at this time.`;
+                    badge.innerHTML = '<i data-lucide="x" style="width:14px; height:14px"></i> DECLINED';
+                    badge.className = 'status-pill-lg badge-red';
+                    badge.classList.remove('pulse-status');
+                    document.getElementById('approved-info').style.display = 'none';
+                    document.getElementById('rejected-info').style.display = 'block';
+                } else {
+                    iconBox.style.background = 'var(--primary-bg)';
+                    iconBox.style.color = 'var(--primary)';
+                    lucideIcon.setAttribute('data-lucide', 'clock');
+                    title.textContent = 'Awaiting Review';
+                    msg.innerHTML = `Your registration for <span class="fw-700">${res.event_name || 'the event'}</span> is being processed.`;
+                    badge.innerHTML = '<i data-lucide="timer" style="width:14px; height:14px"></i> PROCESSING';
+                    badge.className = 'status-pill-lg badge-yellow pulse-status';
                 }
+
+                lucide.createIcons();
+
+                // Stop polling if final state reached
+                if (res.approval_status === 'APPROVED' || res.approval_status === 'REJECTED') {
+                    if (window.statusPoller) clearInterval(window.statusPoller);
+                }
+
             } catch (e) {
                 console.error(e);
-                document.getElementById('loading').innerHTML = '<h3>Error</h3><p class="text-muted mt-8">Unable to check status.</p>';
+                document.getElementById('loading').innerHTML = `
+                    <div class="status-header-icon" style="background:var(--red-bg); color:var(--red)">
+                        <i data-lucide="wifi-off"></i>
+                    </div>
+                    <h3>Connection Error</h3>
+                    <p class="text-muted mt-8 text-sm">Unable to fetch status from the server.</p>
+                `;
+                lucide.createIcons();
             }
         }
 
-        const pollInterval = setInterval(async () => {
-            await checkStatus();
-            if (document.getElementById('s-badge').textContent === 'APPROVED' ||
-                document.getElementById('s-badge').textContent === 'REJECTED') {
-                clearInterval(pollInterval);
-            }
-        }, 5000);
-
+        window.statusPoller = setInterval(checkStatus, 5000);
         checkStatus();
     </script>
 </body>

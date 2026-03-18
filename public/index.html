@@ -4,121 +4,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VisitorGate — Premium Visitor Management</title>
+    <title>VisitorGate — Visitor Management System</title>
     <meta name="description"
-        content="Next-generation QR-based Visitor Management System built for modern enterprise security.">
+        content="Professional QR-based Visitor Management System for offices, schools, and secure facilities.">
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Outfit', sans-serif;
+        .hero-section {
+            padding: 80px 20px 60px;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         .hero-title {
-            font-size: 3.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
+            font-size: 2.75rem;
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
             font-weight: 800;
+            color: var(--text-primary);
         }
 
         .hero-subtitle {
-            font-size: 1.1rem;
-            max-width: 540px;
+            font-size: 1.05rem;
+            max-width: 520px;
             margin: 0 auto 2.5rem;
-            opacity: 0.8;
+            color: var(--text-secondary);
+            line-height: 1.7;
         }
 
-        .badge-premium {
-            background: rgba(79, 70, 229, 0.1);
-            border: 1px solid rgba(79, 70, 229, 0.2);
-            color: var(--primary-light);
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-bg);
+            border: 1px solid rgba(30, 58, 95, 0.15);
+            color: var(--primary);
             padding: 6px 16px;
-            border-radius: 99px;
+            border-radius: 999px;
             font-size: 0.75rem;
             font-weight: 600;
-            letter-spacing: 0.05em;
-            display: inline-block;
+            letter-spacing: 0.04em;
             margin-bottom: 24px;
         }
 
-        .feature-card {
-            padding: 32px;
-            border-radius: 24px;
-            text-align: center;
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .feature-icon {
-            font-size: 2rem;
-            margin-bottom: 16px;
-            display: inline-block;
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-bright);
+        }
+
+        .feature-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .feature-icon-box svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .feature-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .feature-card p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-buttons .btn {
+            padding: 14px 32px;
+            font-size: 0.95rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .landing-footer {
+            margin-top: 80px;
+            padding: 24px 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .footer-links {
+            margin-top: 12px;
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+        }
+
+        .logo-mark {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .logo-mark svg {
+            width: 32px;
+            height: 32px;
+            color: var(--primary);
+        }
+
+        .logo-mark span {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
         }
     </style>
 </head>
 
-<body class="bg-dark flex-center" style="min-height:100vh; padding: 20px;">
-    <div class="mesh-bg"></div>
+<body style="min-height:100vh; padding: 0;">
 
-    <div class="landing-inner text-center animate-fade" style="width: 100%; max-width: 1100px;">
-        <!-- Header Section -->
-        <header class="animate-slide delay-100" style="margin-bottom: 64px;">
-            <div class="badge-premium">SECURE ENTERPRISE ACCESS</div>
-            <h1 class="hero-title text-gradient">Secure Your Space with <br> Modern Intelligence.</h1>
-            <p class="hero-subtitle">VisitorGate is an enterprise-grade QR-based visitor management system designed for
-                schools, offices, and secure facilities.</p>
-
-            <div style="display:flex; gap:16px; justify-content:center;">
-                <a href="login.html" class="btn btn-primary btn-lg"
-                    style="padding:16px 40px; font-size:1rem; border-radius: 16px; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);">
-                    Get Started Now →
-                </a>
-                <a href="#features" class="btn btn-ghost btn-lg"
-                    style="padding:16px 40px; font-size:1rem; border-radius: 16px;">
-                    Explore Features
-                </a>
-            </div>
-        </header>
-
-        <!-- Features Grid -->
-        <div id="features" class="animate-slide delay-200"
-            style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:24px;">
-            <div class="glass-card feature-card">
-                <div class="feature-icon">📱</div>
-                <h4 class="mb-8">Dynamic QR</h4>
-                <p class="text-xs text-secondary">Instant QR code generation for seamless, contactless check-ins.</p>
-            </div>
-            <div class="glass-card feature-card">
-                <div class="feature-icon">🔒</div>
-                <h4 class="mb-8">E2E Secure</h4>
-                <p class="text-xs text-secondary">Advanced encryption ensures all visitor data remains private.</p>
-            </div>
-            <div class="glass-card feature-card">
-                <div class="feature-icon">⚡</div>
-                <h4 class="mb-8">Real-time</h4>
-                <p class="text-xs text-secondary">Monitor campus traffic with live status updates and alerts.</p>
-            </div>
-            <div class="glass-card feature-card">
-                <div class="feature-icon">📊</div>
-                <h4 class="mb-8">Analytics</h4>
-                <p class="text-xs text-secondary">Deep insights and automated reporting for administration.</p>
-            </div>
+    <div class="hero-section animate-slide delay-100">
+        <!-- Logo -->
+        <div class="logo-mark">
+            <i data-lucide="shield-check"></i>
+            <span>VisitorGate</span>
         </div>
 
-        <!-- Footer -->
-        <footer class="animate-fade delay-400"
-            style="margin-top: 80px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.05); width: 100%;">
-            <p class="text-xs text-muted">© 2026 VisitorGate Technologies. All rights reserved.</p>
-            <div style="margin-top: 12px; display: flex; gap: 24px; justify-content: center;">
-                <a href="#" class="text-xs text-muted hover-white">Privacy Policy</a>
-                <a href="#" class="text-xs text-muted hover-white">Terms of Service</a>
-                <a href="#" class="text-xs text-muted hover-white">Support</a>
-            </div>
-        </footer>
+        <div class="badge-pill">
+            <i data-lucide="lock" style="width:12px;height:12px"></i>
+            SECURE ENTERPRISE ACCESS
+        </div>
+
+        <h1 class="hero-title">Secure Your Space with<br>Modern Intelligence.</h1>
+        <p class="hero-subtitle">Professional QR-based visitor management system designed for schools, offices, and
+            secure facilities. Simple, fast, and secure.</p>
+
+        <div class="cta-buttons">
+            <a href="login.html" class="btn btn-primary btn-lg">
+                Get Started
+                <i data-lucide="arrow-right" style="width:18px;height:18px"></i>
+            </a>
+            <a href="#features" class="btn btn-ghost btn-lg">
+                <i data-lucide="layers" style="width:18px;height:18px"></i>
+                Explore Features
+            </a>
+        </div>
     </div>
-    
+
+    <!-- Features Grid -->
+    <div id="features" class="feature-grid animate-slide delay-200">
+        <div class="feature-card">
+            <div class="feature-icon-box" style="background:var(--blue-bg); color:var(--blue);">
+                <i data-lucide="qr-code"></i>
+            </div>
+            <h4>Dynamic QR Codes</h4>
+            <p>Instant QR code generation for seamless, contactless visitor check-ins.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon-box" style="background:var(--green-bg); color:var(--green);">
+                <i data-lucide="shield"></i>
+            </div>
+            <h4>End-to-End Secure</h4>
+            <p>Enterprise-grade security ensures all visitor data stays private and protected.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon-box" style="background:var(--yellow-bg); color:var(--yellow);">
+                <i data-lucide="activity"></i>
+            </div>
+            <h4>Real-time Tracking</h4>
+            <p>Monitor visitor activity with live status updates and instant notifications.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon-box" style="background:var(--purple-bg); color:var(--purple);">
+                <i data-lucide="bar-chart-3"></i>
+            </div>
+            <h4>Analytics & Reports</h4>
+            <p>Deep insights and automated reporting for complete visibility and compliance.</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer animate-fade delay-400">
+        <p class="text-xs text-muted">© 2026 VisitorGate Technologies. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="#" class="text-xs text-muted hover-white">Privacy Policy</a>
+            <a href="#" class="text-xs text-muted hover-white">Terms of Service</a>
+            <a href="#" class="text-xs text-muted hover-white">Support</a>
+        </div>
+    </footer>
+
     <script src="js/auth.js"></script>
     <script>
-        // If the user lands on the homepage but is already logged in, redirect them
+        lucide.createIcons();
         if (typeof auth !== 'undefined' && auth.checkExistingSession) {
             auth.checkExistingSession();
         }

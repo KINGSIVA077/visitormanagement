@@ -1,6 +1,14 @@
 let selectedTemplate = null;
 let lastQrData = null;
-const categoryIcons = { parent: '👨‍👩‍👧‍👦', admission: '🎓', vendor: '🚚', meeting: '👔', document: '📄', event: '🎉', other: '➕' };
+const categoryIcons = { 
+    parent: 'users', 
+    admission: 'graduation-cap', 
+    vendor: 'truck', 
+    meeting: 'briefcase', 
+    document: 'file-text', 
+    event: 'calendar', 
+    other: 'more-horizontal' 
+};
 
 // Utility functions - extend existing utils from api.js
 window.utils = window.utils || {};
@@ -9,34 +17,60 @@ Object.assign(window.utils, {
     formatTime: (date) => new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
 });
 
-
 // Get security user ID from auth
 function getSecurityId() {
     const user = window.auth ? auth.getUser() : null;
     return user ? (user.id || user.uid) : 'sec-user-111';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+const state = {
+    pending: [],
+    inside: [],
+    loading: false
+};
+
+document.addEventListener('DOMContentLoaded', init);
+if (document.readyState !== 'loading') init();
+
+function init() {
     loadAll();
     setInterval(loadAll, 5000);
-});
+
+    // Auto-verify if token is in URL
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+        showSection('events');
+        document.getElementById('evt-pass-input').value = token;
+        verifyEventPass();
+    }
+}
 
 async function loadAll() {
-    loadStats();
-    loadPending();
-    loadInside();
+    if (state.loading) return;
+    state.loading = true;
+    try {
+        await Promise.all([loadStats(), loadPending(), loadInside()]);
+    } finally {
+        state.loading = false;
+    }
 }
 
 function showSection(id, ev) {
-    const e = ev || (typeof event !== 'undefined' ? event : null) || window.event;
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('sec-' + id).classList.add('active');
-    document.querySelectorAll('.sidebar .nav a').forEach(a => a.classList.remove('active'));
+    const sections = document.querySelectorAll('.section');
+    const links = document.querySelectorAll('.sidebar .nav a');
     
-    if (e && e.target) {
-        const link = e.target.closest('a');
-        if (link) link.classList.add('active');
-    }
+    sections.forEach(s => {
+        s.classList.remove('active');
+        if (s.id === 'sec-' + id) s.classList.add('active');
+    });
+
+    links.forEach(a => {
+        a.classList.remove('active');
+        // Match by section id in the onclick attribute
+        if (a.getAttribute('onclick')?.includes(`'${id}'`)) a.classList.add('active');
+    });
+
     if (id === 'categories' && !document.getElementById('category-grid').children.length) loadCategories();
 }
 
@@ -72,16 +106,20 @@ async function loadCategories() {
         const templates = await api.get('/form-templates');
         const grid = document.getElementById('category-grid');
         if (!templates.length) {
-            grid.innerHTML = '<div class="card text-center" style="padding:48px;grid-column:span 3"><span style="font-size:48px">📝</span><p class="text-muted mt-16">No templates available. Ask admin to create templates first.</p></div>';
+            grid.innerHTML = '<div class="card text-center" style="padding:48px;grid-column:span 3"><i data-lucide="file-text" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:16px"></i><p class="text-muted">No templates available. Ask admin to create templates first.</p></div>';
+            lucide.createIcons();
             return;
         }
         grid.innerHTML = templates.map(t => `
             <div class="card category-card" onclick="selectCategory('${t.id}','${t.category}', this)" data-id="${t.id}">
-                <span class="emoji">${categoryIcons[t.category] || '📋'}</span>
+                <div class="category-icon" style="font-size:32px;margin-bottom:12px;color:var(--primary)">
+                    <i data-lucide="${categoryIcons[t.category] || 'clipboard-list'}" style="width:32px;height:32px"></i>
+                </div>
                 <span class="name">${t.name}</span>
                 <p class="text-xs text-muted" style="margin-top:6px">${t.category}</p>
             </div>
         `).join('');
+        lucide.createIcons();
     } catch (e) { console.error('Category error:', e); }
 }
 
@@ -106,7 +144,7 @@ async function generateQR(templateId, category) {
         document.getElementById('qr-result-panel').style.display = 'block';
 
         document.getElementById('home-qr-img').src = qr.qr_image;
-        document.getElementById('home-qr-status').textContent = '🟢 QR Active';
+        document.getElementById('home-qr-status').textContent = 'QR Active';
         document.getElementById('home-qr-code').textContent = session.session_code;
         document.getElementById('active-qr-card').style.display = 'block';
         if (window.auth) auth.showToast('QR Code Generated Successfully', 'success');
@@ -125,30 +163,42 @@ function generateNewQR() {
 async function loadPending() {
     try {
         const data = await api.get('/visitor-requests/pending');
+        // Only re-render if data has changed to prevent flickering
+        if (JSON.stringify(data) === JSON.stringify(state.pending)) return;
+        state.pending = data;
         window.pendingRequests = data;
+
         const el = document.getElementById('pending-list');
-        if (!data.length) { el.innerHTML = '<div class="empty-state"><span class="emoji">✨</span><p>No pending requests</p></div>'; return; }
+        if (!data.length) { 
+            el.innerHTML = '<div class="empty-state"><i data-lucide="sparkles" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:12px"></i><p>No pending requests</p></div>'; 
+            lucide.createIcons();
+            return; 
+        }
         el.innerHTML = data.map(r => `
             <div class="card mb-12 fade-in">
                 <div class="flex-between mb-8">
-                     <h4>${r.visitor_name}</h4>
-                     <span class="badge ${r.approval_status === 'APPROVED' ? 'badge-green' : 'badge-yellow'}">${r.approval_status}</span>
+                     <h4 class="mb-0">${r.visitor_name}</h4>
+                     <span class="badge ${r.approval_status === 'APPROVED' ? 'badge-green' : 'badge-yellow'}" style="text-transform:uppercase; font-size:10px">${r.approval_status}</span>
                 </div>
-                <p class="text-sm">To meet: ${r.staff_name || 'Staff'} · ${r.department_name || ''}</p>
+                <p class="text-sm">To meet: <b>${r.staff_name || 'Staff'}</b> · ${r.department_name || ''}</p>
                 <p class="text-xs text-muted">${r.form_data?.purpose || 'Visit'} · ${utils.formatDate(r.created_at)}</p>
-                <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+                <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
                     ${r.approval_status === 'APPROVED'
                 ? `
-                        <button class="btn btn-ghost btn-sm" onclick="printBadge('${r.id}')">🖨️ Pass</button>
-                        <button class="btn btn-success btn-sm" onclick="doCheckIn('${r.id}','${r.session_id}')">Check In</button>
+                        <a href="virtual-pass.html?id=${r.id}" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration:none">
+                            <i data-lucide="ticket" style="width:14px;height:14px;margin-right:4px"></i> Pass
+                        </a>
+                        <button class="btn btn-success btn-sm" onclick="doCheckIn('${r.id}','${r.session_id}')">
+                            <i data-lucide="log-in" style="width:14px;height:14px;margin-right:4px"></i> Check In
+                        </button>
                     `
-                : `<span class="text-xs text-muted">Awaiting Approval...</span>`}
+                : `<div class="flex-align text-xs text-muted" style="gap:6px"><span class="spinner-sm"></span> Awaiting Approval...</div>`}
                 </div>
             </div>
         `).join('');
+        lucide.createIcons();
     } catch (e) { 
         console.error('Pending error:', e);
-        if (window.auth) auth.showToast('Failed to load pending requests', 'error');
     }
 }
 
@@ -177,7 +227,7 @@ function printBadge(requestId) {
         </head>
         <body onload="setTimeout(() => { window.print(); window.close(); }, 500)">
             <div class="header">
-                <div class="brand">🛡️ VisitorGate</div>
+                <div class="brand">VisitorGate</div>
                 <div class="pass-title">OFFICIAL VISITOR PASS</div>
             </div>
             
@@ -204,8 +254,15 @@ function printBadge(requestId) {
 async function loadInside() {
     try {
         const data = await api.get('/checkins/active');
+        if (JSON.stringify(data) === JSON.stringify(state.inside)) return;
+        state.inside = data;
+
         const el = document.getElementById('inside-list');
-        if (!data.length) { el.innerHTML = '<div class="empty-state"><span class="emoji">🏢</span><p>No visitors inside campus</p></div>'; return; }
+        if (!data.length) { 
+            el.innerHTML = '<div class="empty-state"><i data-lucide="building" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:12px"></i><p>No visitors inside campus</p></div>'; 
+            lucide.createIcons();
+            return; 
+        }
         el.innerHTML = data.map(v => {
             const mins = Math.round((Date.now() - new Date(v.checkin_time).getTime()) / 60000);
             const dur = mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
@@ -218,19 +275,20 @@ async function loadInside() {
                             <span class="badge badge-primary ml-8" style="font-size:10px">${v.visitor_phone}</span>
                         </div>
                         <p class="text-sm text-muted mb-4">
-                            <i class="fas fa-building mr-4"></i>${v.department_name || 'N/A'} 
-                            <i class="fas fa-user-tie ml-8 mr-4"></i>${v.staff_name || 'N/A'}
+                            <i data-lucide="building" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i>${v.department_name || 'N/A'} 
+                            <i data-lucide="user-round" style="width:12px;height:12px;vertical-align:middle;margin-left:8px;margin-right:4px"></i>${v.staff_name || 'N/A'}
                         </p>
                         <p class="text-xs" style="color: var(--primary)">
-                            <i class="fas fa-clock mr-4"></i>In: ${utils.formatTime(v.checkin_time)} · <b>Duration: ${dur}</b>
+                            <i data-lucide="clock" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i>In: ${utils.formatTime(v.checkin_time)} · <b>Duration: ${dur}</b>
                         </p>
                     </div>
                     <button class="btn btn-ghost btn-sm" onclick="doCheckOut('${v.id}')">
-                        <i class="fas fa-sign-out-alt mr-4"></i>Check Out
+                        <i data-lucide="log-out" style="width:14px;height:14px;margin-right:4px"></i>Check Out
                     </button>
                 </div>
             </div>`;
         }).join('');
+        lucide.createIcons();
     } catch (e) { console.error('Inside error:', e); }
 }
 
@@ -243,7 +301,7 @@ async function doCheckIn(requestId, sessionId) {
             security_id: getSecurityId(),
             gate_location: 'Main Gate'
         });
-        if (window.auth) auth.showToast(`✅ Checked in: ${res.visitor_name || 'Visitor'}`, 'success');
+        if (window.auth) auth.showToast(`Checked in: ${res.visitor_name || 'Visitor'}`, 'success');
         loadAll();
     } catch (e) {
         if (window.auth) auth.showToast(e.message || 'Check-in failed', 'error');
@@ -254,7 +312,7 @@ async function doCheckOut(checkinId) {
     if (!confirm('Are you sure you want to check out this visitor?')) return;
     try {
         await api.post('/checkins/' + checkinId + '/checkout', { security_id: getSecurityId() });
-        if (window.auth) auth.showToast('🚪 Visitor checked out successfully', 'success');
+        if (window.auth) auth.showToast('Visitor checked out successfully', 'success');
         loadAll();
     } catch (e) {
         if (window.auth) auth.showToast(e.message || 'Check-out failed', 'error');
@@ -268,16 +326,18 @@ async function verifyEventPass() {
     if (!input) return alert('Please enter a pass token');
 
     let token = input;
+    let isPassId = input.startsWith('VG-E-');
     if (input.includes('token=')) {
         try { token = new URL(input, window.location.origin).searchParams.get('token') || input; } catch (e) { }
     }
 
     const el = document.getElementById('evt-verify-result');
     el.style.display = 'block';
-    el.innerHTML = '<p class="text-center">🔍 Verifying...</p>';
+    el.innerHTML = '<div class="text-center py-20"><div class="spinner"></div><p class="text-muted mt-10">Verifying...</p></div>';
 
     try {
-        const reg = await api.get('/event-registrations/verify?token=' + token);
+        const url = isPassId ? '/event-registrations/verify?id=' + token : '/event-registrations/verify?token=' + token;
+        const reg = await api.get(url);
 
         const isApproved = reg.approval_status === 'APPROVED';
         const statusColor = isApproved ? 'var(--green)' : 'var(--red)';
@@ -286,36 +346,41 @@ async function verifyEventPass() {
         el.innerHTML = `
             <div style="padding:20px">
                 <div class="flex-between mb-16">
-                    <h3>${reg.visitor_name}</h3>
+                    <div>
+                        <h3>${reg.visitor_name}</h3>
+                        <div style="font-family:monospace; font-size:12px; color:var(--text-muted); margin-top:2px">${reg.pass_id || 'ID: NOT ASSIGNED'}</div>
+                    </div>
                     <span class="badge ${isApproved ? 'badge-green' : 'badge-red'}" style="font-size:14px;padding:6px 16px">${reg.approval_status}</span>
                 </div>
-                <div class="text-sm mb-8">📧 ${reg.visitor_email} · 📱 ${reg.visitor_phone}</div>
-                <div class="text-sm mb-8">🏢 ${reg.organization || 'N/A'} · ${reg.designation || 'Participant'}</div>
-                <div class="text-sm mb-16" style="color:var(--primary)">🎪 <b>${reg.event_name}</b> · 📅 ${new Date(reg.event_date).toLocaleDateString('en-IN')} · 📍 ${reg.venue || 'TBA'}</div>
+                <div class="text-sm mb-8"><i data-lucide="mail" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${reg.visitor_email} · <i data-lucide="phone" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${reg.visitor_phone}</div>
+                <div class="text-sm mb-8"><i data-lucide="building" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${reg.organization || 'N/A'} · ${reg.designation || 'Participant'}</div>
+                <div class="text-sm mb-16" style="color:var(--primary)"><i data-lucide="calendar" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> <b>${reg.event_name}</b> · <i data-lucide="calendar-days" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${new Date(reg.event_date).toLocaleDateString('en-IN')} · <i data-lucide="map-pin" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${reg.venue || 'TBA'}</div>
 
                 <div style="background:${statusBg};color:${statusColor};padding:16px;border-radius:12px;text-align:center;font-weight:700;font-size:16px;margin-bottom:16px">
                     ${isApproved
-                ? (reg.is_inside ? '🏢 CURRENTLY INSIDE' : '✅ APPROVED — READY FOR CHECK-IN')
-                : '❌ NOT APPROVED — ENTRY DENIED'}
+                ? (reg.is_inside ? 'CURRENTLY INSIDE' : 'APPROVED — READY FOR CHECK-IN')
+                : 'NOT APPROVED — ENTRY DENIED'}
                 </div>
 
                 ${isApproved ? `
                     <div style="display:flex;gap:12px;justify-content:center">
                         ${reg.is_inside
                     ? ''
-                    : `<button class="btn btn-success btn-lg" onclick="eventCheckIn('${reg.id}','${reg.event_id}')">✅ CHECK IN</button>`}
+                    : `<button class="btn btn-success btn-lg" onclick="eventCheckIn('${reg.id}','${reg.event_id}')"><i data-lucide="check-circle" style="width:18px;height:18px;margin-right:8px"></i> CHECK IN</button>`}
                     </div>
                 ` : ''}
             </div>
         `;
+        lucide.createIcons();
     } catch (e) {
         el.innerHTML = `
             <div style="text-align:center;padding:24px">
-                <div style="font-size:48px;margin-bottom:12px">❌</div>
+                <i data-lucide="x-circle" style="width:48px;height:48px;color:var(--red);margin-bottom:16px"></i>
                 <h3 style="color:var(--red)">Invalid Pass</h3>
                 <p class="text-sm text-muted" style="margin-top:8px">${e.message || 'This pass token is not valid.'}</p>
             </div>
         `;
+        lucide.createIcons();
     }
 }
 
@@ -346,7 +411,8 @@ async function loadEventInside() {
         const data = await api.get('/event-checkins/active');
         const el = document.getElementById('event-inside-list');
         if (!data.length) {
-            el.innerHTML = '<div class="empty-state"><span class="emoji">🎪</span><p>No event visitors inside</p></div>';
+            el.innerHTML = '<div class="empty-state"><i data-lucide="calendar" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:12px"></i><p>No event visitors inside</p></div>';
+            lucide.createIcons();
             return;
         }
         el.innerHTML = data.map(v => {
@@ -357,12 +423,13 @@ async function loadEventInside() {
                 <div class="flex-between">
                     <div>
                         <h4>${v.visitor_name}</h4>
-                        <p class="text-sm">🎪 ${v.event_name || 'Event'} · ${v.organization || ''}</p>
-                        <p class="text-xs text-muted">In: ${utils.formatDate(v.checkin_time)} · Duration: ${dur}</p>
+                        <p class="text-sm"><i data-lucide="calendar" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${v.event_name || 'Event'} · <i data-lucide="building" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${v.organization || ''}</p>
+                        <p class="text-xs text-muted"><i data-lucide="clock" style="width:10px;height:10px;vertical-align:middle;margin-right:2px"></i> In: ${utils.formatDate(v.checkin_time)} · Duration: ${dur}</p>
                     </div>
-                    <button class="btn btn-ghost btn-sm" onclick="eventCheckOut('${v.id}')">🚪 Check Out</button>
+                    <button class="btn btn-ghost btn-sm" onclick="eventCheckOut('${v.id}')"><i data-lucide="log-out" style="width:14px;height:14px;margin-right:4px"></i> Check Out</button>
                 </div>
             </div>`;
         }).join('');
+        lucide.createIcons();
     } catch (e) { console.error('Event inside error:', e); }
 }

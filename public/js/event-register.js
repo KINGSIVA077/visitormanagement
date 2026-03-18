@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         const btn = document.getElementById('submit-btn');
         btn.disabled = true;
-        btn.textContent = '⏳ Submitting...';
+        btn.innerHTML = '<span class="spinner-sm"></span> Submitting...';
 
         const errEl = document.getElementById('form-error');
         errEl.style.display = 'none';
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             errEl.textContent = err.message || 'Registration failed. Please try again.';
             errEl.style.display = 'block';
             btn.disabled = false;
-            btn.textContent = '📝 Register for Event';
+            btn.textContent = 'Register for Event';
         }
     });
 });

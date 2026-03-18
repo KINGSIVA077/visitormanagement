@@ -60,9 +60,10 @@
         }
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
-        toast.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+        const icons = { success: 'check-circle', error: 'x-circle', info: 'info' };
+        toast.innerHTML = `<i data-lucide="${icons[type] || 'info'}" style="width:18px;height:18px;margin-right:12px"></i><span>${message}</span>`;
         container.appendChild(toast);
+        if (window.lucide) lucide.createIcons();
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateX(60px)';
@@ -85,7 +86,8 @@
             toggleBtn.addEventListener('click', () => {
                 const isPass = passInput.type === 'password';
                 passInput.type = isPass ? 'text' : 'password';
-                toggleBtn.textContent = isPass ? '🙈' : '👁️';
+                toggleBtn.innerHTML = isPass ? '<i data-lucide="eye-off" style="width:20px;height:20px"></i>' : '<i data-lucide="eye" style="width:20px;height:20px"></i>';
+                lucide.createIcons();
             });
         }
 

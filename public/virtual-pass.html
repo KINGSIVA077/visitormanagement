@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual ID Pass — VisitorGate</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .id-pass {
+            width: 380px;
+            background: #fff;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            position: relative;
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            background: var(--primary);
+            height: 160px;
+            position: relative;
+            padding: 24px;
+            text-align: center;
+            color: white;
+            z-index: 1;
+        }
+        
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: #fff;
+            border-radius: 50% 50% 0 0;
+            z-index: -1;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .logo-box svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .pass-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.7;
+        }
+
+        .profile-container {
+            margin-top: -75px;
+            position: relative;
+            text-align: center;
+            z-index: 10;
+        }
+
+        .profile-img {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 6px solid #fff;
+            box-shadow: var(--shadow-md);
+            object-fit: cover;
+            background: var(--gray-100);
+        }
+
+        .content {
+            padding: 20px 32px 32px;
+            text-align: center;
+        }
+
+        .visitor-name {
+            font-size: 1.625rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .visitor-type {
+            font-size: 0.875rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .qr-section {
+            background: var(--gray-50);
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            display: inline-block;
+            margin-bottom: 28px;
+            border: 1px dashed var(--border-bright);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .qr-code { width: 150px; height: 150px; display: block; }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: left;
+            margin-top: 8px;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+        }
+
+        .detail-item .detail-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .detail-item .detail-value {
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .pass-id {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.5);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .footer {
+            background: var(--gray-100);
+            padding: 12px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            filter: brightness(1.1);
+        }
+
+        @media print {
+            .print-btn { display: none; }
+            body { background: white; padding: 0; }
+            .id-pass { box-shadow: none; border: 1px solid #eee; margin: 0 auto; }
+        }
+    </style>
+</head>
+<body>
+    <div id="pass-content" class="id-pass animate-slide">
+        <div class="header">
+            <div class="pass-id" id="pass-id-text">PASS-XXXX</div>
+            <div class="logo-box">
+                <i data-lucide="shield-check"></i>
+                VisitorGate
+            </div>
+            <div class="pass-label">Official Visitor Pass</div>
+        </div>
+
+        <div class="profile-container">
+            <img src="" alt="Visitor" class="profile-img" id="visitor-photo">
+        </div>
+
+        <div class="content">
+            <h1 class="visitor-name" id="visitor-name-text">-</h1>
+            <span class="visitor-type" id="visitor-purpose">
+                <i data-lucide="tag" style="width:14px;height:14px"></i>
+                General Visit
+            </span>
+
+            <div class="qr-section">
+                <img src="" alt="Scan to Verify" class="qr-code" id="verify-qr">
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Department</span>
+                    <span class="detail-value" id="pass-dept">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Host</span>
+                    <span class="detail-value" id="pass-staff">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Valid On</span>
+                    <span class="detail-value" id="pass-date">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value" style="color:var(--green)">APPROVED</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <i data-lucide="lock" style="width:12px;height:12px"></i>
+            Secured Official Document • ID Required upon request
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">
+        <i data-lucide="printer"></i>
+        Print Pass
+    </button>
+
+    <script src="js/api.js"></script>
+    <script>
+        async function loadPass() {
+            lucide.createIcons();
+            const params = new URLSearchParams(window.location.search);
+            const requestId = params.get('id');
+            if (!requestId) return;
+
+            try {
+                // Fetch info
+                let data;
+                if (typeof api !== 'undefined' && api.get) {
+                    data = await api.get('/visitor-requests/' + requestId);
+                } else {
+                    const res = await fetch(`/api/visitor-requests/${requestId}`);
+                    data = await res.json();
+                }
+                
+                if (data) {
+                    document.getElementById('visitor-name-text').textContent = data.visitor_name;
+                    document.getElementById('visitor-purpose').innerHTML = `<i data-lucide="tag" style="width:14px;height:14px"></i> ${data.form_data?.purpose || 'General Visit'}`;
+                    document.getElementById('pass-dept').textContent = data.department_name || '-';
+                    document.getElementById('pass-staff').textContent = data.staff_name || '-';
+                    document.getElementById('pass-date').textContent = new Date(data.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    document.getElementById('pass-id-text').textContent = data.pass_id || ('REQ-' + data.id.slice(-6).toUpperCase());
+                    
+                    // Profile image
+                    document.getElementById('visitor-photo').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.visitor_name)}&background=1e3a5f&color=fff&size=200&bold=true`;
+
+                    // Verification QR
+                    const verifyUrl = window.location.origin + '/verify.html?id=' + requestId;
+                    const qrGenUrl = `/api/qr/generate?url=${encodeURIComponent(verifyUrl)}`;
+                    
+                    let qrData;
+                    if (typeof api !== 'undefined' && api.get) {
+                        qrData = await api.get('/qr/generate?url=' + encodeURIComponent(verifyUrl));
+                    } else {
+                        const qrRes = await fetch(qrGenUrl);
+                        qrData = await qrRes.json();
+                    }
+
+                    if (qrData && qrData.qr_image) {
+                        document.getElementById('verify-qr').src = qrData.qr_image;
+                    }
+                    lucide.createIcons();
+                }
+            } catch (e) { console.error('Error loading pass:', e); }
+        }
+        loadPass();
+    </script>
+</body>
+</html>

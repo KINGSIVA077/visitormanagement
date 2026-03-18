@@ -5,106 +5,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VisitorGate - Visitor Registration</title>
+    <script src="js/api.js"></script>
     <style>
-        /* Inline critical CSS so page renders even if external CSS fails */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0a0e1a;
-            color: #f1f5f9;
+            background: #f7f8fa;
+            color: #111827;
             line-height: 1.6;
             min-height: 100vh;
             padding: 20px;
         }
 
-        .visitor-page {
-            max-width: 520px;
-            margin: 0 auto;
-        }
+        .visitor-page { max-width: 520px; margin: 0 auto; }
 
         .brand {
             text-align: center;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
-            color: #6366f1;
+            color: #1e3a5f;
             padding: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .card {
-            background: rgba(26, 31, 53, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
             padding: 28px;
             margin-bottom: 20px;
-            backdrop-filter: blur(12px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
 
-        h2 {
-            font-size: 20px;
-            font-weight: 700;
-        }
+        h2 { font-size: 20px; font-weight: 700; color: #111827; }
 
-        .form-group {
-            margin-bottom: 18px;
-        }
+        .form-group { margin-bottom: 18px; }
 
         .form-label {
             display: block;
             font-size: 13px;
             font-weight: 500;
-            color: #94a3b8;
+            color: #4b5563;
             margin-bottom: 6px;
         }
 
-        input,
-        select,
-        textarea {
+        input, select, textarea {
             width: 100%;
-            padding: 12px 16px;
-            background: #111827;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: #f1f5f9;
+            padding: 10px 14px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            color: #111827;
             font-size: 14px;
             font-family: inherit;
             outline: none;
             transition: border 0.2s;
         }
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: #6366f1;
+        input:focus, select:focus, textarea:focus {
+            border-color: #1e3a5f;
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
         }
 
         select {
             cursor: pointer;
             -webkit-appearance: none;
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: calc(100% - 14px) center;
             padding-right: 36px;
         }
 
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
+        textarea { resize: vertical; min-height: 80px; }
 
         .btn {
             display: block;
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: none;
-            border-radius: 10px;
+            border-radius: 6px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
@@ -112,109 +98,90 @@
             transition: all 0.2s;
         }
 
-        .btn-primary {
-            background: #6366f1;
-            color: #fff;
-        }
+        .btn-primary { background: #1e3a5f; color: #fff; }
+        .btn-primary:hover { background: #132843; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .btn-primary:hover {
-            background: #4f46e5;
-        }
+        .text-xs { font-size: 12px; }
+        .text-muted { color: #9ca3af; }
+        .text-center { text-align: center; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-24 { margin-bottom: 24px; }
 
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .text-xs {
-            font-size: 12px;
-        }
-
-        .text-muted {
-            color: #64748b;
-        }
-
-        .text-center {
-            text-align: center;
-        }
-
-        .mb-8 {
-            margin-bottom: 8px;
-        }
-
-        .mb-24 {
-            margin-bottom: 24px;
-        }
-
-        #loading-view {
-            text-align: center;
-            padding: 60px 20px;
-        }
+        #loading-view { text-align: center; padding: 60px 20px; }
 
         .spinner {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(99, 102, 241, 0.2);
-            border-top-color: #6366f1;
+            width: 36px;
+            height: 36px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #1e3a5f;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .error-box {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+            background: rgba(220, 38, 38, 0.06);
+            color: #dc2626;
             padding: 12px 16px;
-            border-radius: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(220, 38, 38, 0.15);
             margin-bottom: 16px;
             font-size: 13px;
             display: none;
         }
 
         .success-box {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
+            background: rgba(5, 150, 105, 0.06);
+            color: #059669;
             padding: 16px;
-            border-radius: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(5, 150, 105, 0.15);
             font-weight: 600;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.3); }
+            50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
         }
     </style>
 </head>
 
 <body>
     <div class="visitor-page">
-        <div class="brand">🛡️ VisitorGate</div>
+        <div class="brand">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            VisitorGate
+        </div>
 
         <!-- LOADING VIEW -->
         <div id="loading-view" class="card">
             <div class="spinner"></div>
-            <p style="margin-top:16px;color:#94a3b8">Loading registration form...</p>
+            <p style="margin-top:16px;color:#9ca3af">Loading registration form...</p>
         </div>
 
         <!-- ERROR VIEW -->
         <div id="error-view" class="card" style="display:none;text-align:center;padding:48px">
-            <div style="font-size:56px;margin-bottom:20px">⚠️</div>
+            <div style="font-size:48px;margin-bottom:20px;color:#dc2626">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            </div>
             <h2>Invalid or Expired Link</h2>
-            <p id="error-msg" style="margin-top:12px;color:#94a3b8">This QR code is no longer valid. Please request a
+            <p id="error-msg" style="margin-top:12px;color:#9ca3af">This QR code is no longer valid. Please request a
                 new one from the security desk.</p>
         </div>
 
         <!-- FORM VIEW -->
         <div id="form-view" class="card" style="display:none">
             <h2 id="form-title" class="mb-8" data-lang="visitor_registration">Visitor Registration</h2>
-            <p id="form-desc" class="mb-24" style="color:#94a3b8" data-lang="registration_desc">Please fill in your
+            <p id="form-desc" class="mb-24" style="color:#9ca3af" data-lang="registration_desc">Please fill in your
                 details to request entry.</p>
 
             <div id="form-error" class="error-box"></div>
 
             <form id="visitor-form">
-                <!-- 1. Destination (Always required for workflow) -->
+                <!-- 1. Destination -->
                 <div class="form-group">
                     <label class="form-label" data-lang="department">Department *</label>
                     <select id="f-department" required>
@@ -228,10 +195,9 @@
                     </select>
                 </div>
 
-                <!-- 2. Templated Info (Dynamically rendered from Admin Template) -->
+                <!-- 2. Templated Info -->
                 <div id="dynamic-fields">
-                    <!-- Loading state for fields -->
-                    <div style="text-align:center; padding:20px; color:#64748b; font-size:13px;">
+                    <div style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">
                         Loading form fields...
                     </div>
                 </div>
@@ -241,313 +207,70 @@
                     Submit Entry Request
                 </button>
 
-                <p class="text-xs text-muted text-center" style="margin-top:16px">
-                    🔒 Your data is secure and only shared with the selected staff member.
+                <p class="text-xs text-muted text-center" style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:4px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Your data is secure and only shared with the selected staff member.
                 </p>
             </form>
         </div>
 
         <!-- SUCCESS VIEW -->
-        <div id="success-view" class="card" style="display:none;text-align:center;padding:48px">
-            <div style="font-size:56px;margin-bottom:20px">✅</div>
-            <h2>Request Submitted!</h2>
-            <p style="margin-top:12px;line-height:1.8;color:#94a3b8">
-                Your visit request has been sent.<br>
-                Please wait at the security desk for approval.
-            </p>
-            <div class="success-box" style="margin-top:24px">
-                Status: ⏳ PENDING APPROVAL
+        <div id="success-view" class="card" style="display:none;text-align:center;padding:32px">
+            <div style="margin-bottom:16px;color:#059669">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
             </div>
-            <div id="status-qr-container" style="margin-top:32px; display:none">
+            <h2>Request Submitted!</h2>
+
+            <!-- SMS Notification Confirmation -->
+            <div id="sms-confirmation" style="margin-top:16px;padding:14px 18px;background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.15);border-radius:8px;text-align:left">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+                    <span style="font-weight:600;color:#059669;font-size:14px">SMS Notification Sent to Staff</span>
+                </div>
+                <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5">
+                    The selected staff member has been notified on their phone. You will receive an SMS on your phone when they respond.
+                </p>
+            </div>
+
+            <!-- Live Status Tracker -->
+            <div id="live-status" style="margin-top:20px;padding:18px;background:rgba(30,58,95,0.04);border:1px solid rgba(30,58,95,0.1);border-radius:8px">
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+                    <div id="status-pulse" style="width:10px;height:10px;border-radius:50%;background:#d97706;animation:pulse-glow 1.5s ease-in-out infinite"></div>
+                    <span id="live-status-text" style="font-weight:700;font-size:15px;color:#d97706">WAITING FOR STAFF RESPONSE</span>
+                </div>
+                <p id="live-status-detail" style="margin:0;font-size:12px;color:#9ca3af">Your request is being reviewed. This page updates automatically.</p>
+            </div>
+
+            <!-- Notification Timeline -->
+            <div id="notif-timeline" style="margin-top:20px;text-align:left">
+                <div style="font-size:12px;font-weight:600;color:#9ca3af;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Notification Timeline</div>
+                <div id="timeline-items" style="border-left:2px solid #e5e7eb;padding-left:16px;margin-left:6px">
+                    <div class="timeline-item" style="margin-bottom:12px;position:relative">
+                        <div style="position:absolute;left:-22px;top:2px;width:12px;height:12px;border-radius:50%;background:#059669;border:2px solid #f7f8fa"></div>
+                        <div style="font-size:12px;color:#059669;font-weight:600">Form Submitted</div>
+                        <div style="font-size:11px;color:#9ca3af" id="timeline-submit-time">Just now</div>
+                    </div>
+                    <div class="timeline-item" style="margin-bottom:12px;position:relative">
+                        <div style="position:absolute;left:-22px;top:2px;width:12px;height:12px;border-radius:50%;background:#1e3a5f;border:2px solid #f7f8fa"></div>
+                        <div style="font-size:12px;color:#1e3a5f;font-weight:600">SMS Sent to Staff</div>
+                        <div style="font-size:11px;color:#9ca3af">Notification delivered to staff's phone</div>
+                    </div>
+                    <div id="timeline-response" class="timeline-item" style="margin-bottom:12px;position:relative">
+                        <div id="timeline-response-dot" style="position:absolute;left:-22px;top:2px;width:12px;height:12px;border-radius:50%;background:#d1d5db;border:2px solid #f7f8fa;animation:pulse-glow 1.5s ease-in-out infinite"></div>
+                        <div style="font-size:12px;color:#9ca3af;font-weight:600" id="timeline-response-text">Waiting for staff response...</div>
+                        <div style="font-size:11px;color:#9ca3af" id="timeline-response-detail"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="status-qr-container" style="margin-top:20px; display:none">
                 <p class="text-xs text-muted mb-8">Scan to track your request status:</p>
-                <img id="status-qr-img" style="width:160px; height:160px; border-radius:12px; border:4px solid #fff">
-                <p id="status-qr-url" class="text-xs text-muted mt-8" style="word-break:break-all; opacity:0.6"></p>
+                <img id="status-qr-img" style="width:140px; height:140px; border-radius:8px; border:2px solid #e5e7eb">
             </div>
         </div>
     </div>
 
-    <script>
-        // ═══ Inline all JS to avoid separate file loading issues on mobile ═══
-        const API_BASE = '/api';
-
-        async function apiGet(url) {
-            console.log(`[API] GET ${url}`);
-            try {
-                const res = await fetch(API_BASE + url);
-                const text = await res.text();
-                try { return JSON.parse(text); }
-                catch (e) {
-                    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-                    throw new Error('Invalid response');
-                }
-            } catch (e) { console.error(`[API] GET ${url} Error:`, e); throw e; }
-        }
-
-        async function apiPost(url, data) {
-            console.log(`[API] POST ${url}`);
-            try {
-                const res = await fetch(API_BASE + url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                const text = await res.text();
-                try { return JSON.parse(text); }
-                catch (e) {
-                    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                    if (jsonMatch) return JSON.parse(jsonMatch[0]);
-                    throw new Error(res.ok ? 'Invalid response' : 'HTTP ' + res.status);
-                }
-            } catch (e) { console.error(`[API] POST ${url} Error:`, e); throw e; }
-        }
-
-        function getParam(name) {
-            return new URLSearchParams(window.location.search).get(name);
-        }
-
-        let sessionData = null;
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('[VISITOR] Page Loaded');
-            
-            // 1. Load language support first
-            const langScript = document.createElement('script');
-            langScript.src = 'js/lang.js';
-            langScript.onload = () => {
-                console.log('[VISITOR] lang.js loaded');
-                if (window.lang) lang.init();
-            };
-            document.head.appendChild(langScript);
-
-            const sessionCode = getParam('session');
-            const token = getParam('token');
-
-            if (!sessionCode || !token) {
-                showError('Missing session or token. Please scan the QR code again.');
-                return;
-            }
-
-            try {
-                const result = await apiPost('/qr-sessions/validate', {
-                    session_code: sessionCode,
-                    token: token
-                });
-
-                if (!result || !result.valid) {
-                    showError(result?.error || 'This QR code is invalid or has expired.');
-                    return;
-                }
-
-                sessionData = result;
-
-                // Load template if available
-                if (result.template_id) {
-                    try {
-                        const template = await apiGet('/form-templates/' + result.template_id);
-                        if (template && template.name) {
-                            document.getElementById('form-title').textContent = template.name;
-                            document.getElementById('form-desc').textContent = template.description || 'Please fill in your details.';
-                            if (template.fields && Array.isArray(template.fields)) {
-                                renderDynamicFields(template.fields);
-                            }
-                        }
-                    } catch (e) { console.warn('Template load skipped:', e); }
-                }
-
-                // Load departments
-                try {
-                    const depts = await apiGet('/departments');
-                    if (Array.isArray(depts)) {
-                        const sel = document.getElementById('f-department');
-                        sel.innerHTML = '<option value="">Select Department</option>' +
-                            depts.map(d => '<option value="' + d.id + '">' + d.name + (d.code ? ' (' + d.code + ')' : '') + '</option>').join('');
-                    }
-                } catch (e) { console.warn('Departments load failed:', e); }
-
-                // Show the form
-                document.getElementById('loading-view').style.display = 'none';
-                document.getElementById('form-view').style.display = 'block';
-
-            } catch (e) {
-                console.error('Init error:', e);
-                showError(e.message || 'Unable to load the registration form. The QR code may be expired.');
-            }
-
-            document.getElementById('f-department').addEventListener('change', loadStaffForDept);
-            document.getElementById('visitor-form').addEventListener('submit', submitForm);
-        });
-
-        async function loadStaffForDept() {
-            const deptId = document.getElementById('f-department').value;
-            const staffSelect = document.getElementById('f-staff');
-            staffSelect.innerHTML = '<option value="">Select Staff</option>';
-            if (!deptId) return;
-
-            try {
-                const staff = await apiGet('/departments/' + deptId + '/staff');
-                if (Array.isArray(staff)) {
-                    staffSelect.innerHTML += staff.map(s => {
-                        const icon = s.availability_status === 'available' ? '🟢' : s.availability_status === 'busy' ? '🔴' : '🟡';
-                        return '<option value="' + s.id + '">' + icon + ' ' + s.name + ' (' + (s.designation || 'Staff') + ')</option>';
-                    }).join('');
-                }
-            } catch (e) { console.warn('Staff load error:', e); }
-        }
-
-        function renderDynamicFields(fields) {
-            const container = document.getElementById('dynamic-fields');
-            
-            // 1. Define base required fields that the database needs
-            const baseFields = [
-                { id: 'visitor_name', label: 'Full Name', type: 'text', required: true, placeholder: 'Enter your full name' },
-                { id: 'visitor_phone', label: 'Phone Number', type: 'tel', required: true, placeholder: '+91 9876543210' },
-                { id: 'visitor_email', label: 'Email Address', type: 'email', required: false, placeholder: 'youremail@example.com' }
-            ];
-
-            // 2. Filter out template fields that already cover these base fields (by ID or label)
-            const templateFieldIds = fields.map(f => f.id.toLowerCase());
-            const templateFieldLabels = fields.map(f => f.label.toLowerCase());
-            
-            const neededBaseFields = baseFields.filter(bf => 
-                !templateFieldIds.includes(bf.id) && 
-                !templateFieldLabels.includes(bf.label.toLowerCase()) &&
-                !templateFieldLabels.includes('name') && // fuzzy match for name
-                !templateFieldLabels.includes('phone') // fuzzy match for phone
-            );
-
-            // 3. Filter out "Department" and "Staff" from template fields as they are system-managed at the top
-            const finalTemplateFields = fields.filter(f => {
-                const lbl = f.label.toLowerCase();
-                return !lbl.includes('department') && !lbl.includes('person to meet') && !f.id?.includes('staff') && !f.id?.includes('dept');
-            });
-
-            // 4. Combine fields (Base fields first, then filtered Template fields)
-            const allFields = [...neededBaseFields, ...finalTemplateFields];
-
-            container.innerHTML = allFields.map(f => {
-                const req = f.required ? 'required' : '';
-                const nameAttr = f.id || f.label.toLowerCase().replace(/\s+/g, '_');
-                let html = '';
-                
-                switch (f.type) {
-                    case 'textarea':
-                        html = `<textarea name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}></textarea>`;
-                        break;
-                    case 'select': case 'dropdown':
-                        html = `<select name="${nameAttr}" id="f-${nameAttr}" ${req}><option value="">Select...</option>` +
-                            (f.options || []).map(o => `<option value="${o}">${o}</option>`).join('') + `</select>`;
-                        break;
-                    case 'email':
-                        html = `<input type="email" name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}>`;
-                        break;
-                    case 'tel': case 'phone':
-                        html = `<input type="tel" name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}>`;
-                        break;
-                    default:
-                        html = `<input type="${f.type || 'text'}" name="${nameAttr}" id="f-${nameAttr}" placeholder="${f.placeholder || ''}" ${req}>`;
-                }
-                return `<div class="form-group"><label class="form-label">${f.label}${f.required ? ' *' : ''}</label>${html}</div>`;
-            }).join('');
-            
-            // Special case: Purpose of visit (if not in template, add it)
-            if (!templateFieldLabels.includes('purpose')) {
-                const purposeHtml = `
-                    <div class="form-group">
-                        <label class="form-label">Purpose of Visit *</label>
-                        <select name="purpose" id="f-purpose" required>
-                            <option value="">Select Purpose</option>
-                            <option>General Visit</option>
-                            <option>Admission Enquiry</option>
-                            <option>Meet Staff</option>
-                            <option>Document Submission</option>
-                            <option>Interview</option>
-                            <option>Delivery/Vendor</option>
-                            <option>Other</option>
-                        </select>
-                    </div>`;
-                container.insertAdjacentHTML('beforeend', purposeHtml);
-            }
-        }
-
-        async function submitForm(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
-
-            const formData = Object.fromEntries(new FormData(e.target));
-            
-            // Map values for the database columns
-            // Try to find Name/Phone/Email in the formData by fuzzy keys if core IDs aren't present
-            let visitor_name = formData.visitor_name;
-            let visitor_phone = formData.visitor_phone;
-            let visitor_email = formData.visitor_email || '';
-
-            if (!visitor_name) {
-                // Fuzzy search for name
-                const key = Object.keys(formData).find(k => k.includes('name'));
-                if (key) visitor_name = formData[key];
-            }
-            if (!visitor_phone) {
-                // Fuzzy search for phone
-                const key = Object.keys(formData).find(k => k.includes('phone') || k.includes('mobile'));
-                if (key) visitor_phone = formData[key];
-            }
-
-            const payload = {
-                session_id: sessionData.session_id,
-                visitor_name: visitor_name || 'Visitor',
-                visitor_phone: visitor_phone || '0000000000',
-                visitor_email: visitor_email,
-                department_id: document.getElementById('f-department').value,
-                staff_id: document.getElementById('f-staff').value,
-                form_data: formData
-            };
-
-            try {
-                const res = await apiPost('/visitor-requests/submit', payload);
-                document.getElementById('form-view').style.display = 'none';
-                document.getElementById('success-view').style.display = 'block';
-
-                if (res.request_id) {
-                    showStatusQR(res.request_id);
-                }
-            } catch (err) {
-                const errEl = document.getElementById('form-error');
-                errEl.textContent = err.message || 'Submission failed. Please try again.';
-                errEl.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'Submit Entry Request';
-            }
-        }
-
-        async function showStatusQR(requestId) {
-            try {
-                let baseUrl = window.location.origin;
-                try {
-                    const info = await apiGet('/server-info');
-                    if (info && info.base_url) baseUrl = info.base_url;
-                } catch (e) { }
-
-                const statusUrl = baseUrl + '/visitor-status.html?id=' + requestId;
-                const qrRes = await apiGet('/qr/generate?url=' + encodeURIComponent(statusUrl));
-
-                if (qrRes && qrRes.qr_image) {
-                    document.getElementById('status-qr-img').src = qrRes.qr_image;
-                    document.getElementById('status-qr-url').textContent = statusUrl;
-                    document.getElementById('status-qr-container').style.display = 'block';
-                }
-            } catch (e) { console.warn('Status QR generation failed:', e); }
-        }
-
-        function showError(msg) {
-            document.getElementById('loading-view').style.display = 'none';
-            document.getElementById('form-view').style.display = 'none';
-            if (msg) document.getElementById('error-msg').textContent = msg;
-            document.getElementById('error-view').style.display = 'block';
-        }
-    </script>
+    <script src="js/visitor.js"></script>
 </body>
 
 </html>

@@ -19,18 +19,19 @@ function updateNotifBtn(permission) {
     const btn = document.getElementById('notif-btn');
     if (!btn) return;
     if (permission === 'granted') {
-        btn.textContent = '🔔';
+        btn.innerHTML = '<i data-lucide="bell" style="width:20px;height:20px"></i>';
         btn.style.color = 'var(--green)';
         btn.title = 'Notifications Enabled';
     } else if (permission === 'denied') {
-        btn.textContent = '🔕';
+        btn.innerHTML = '<i data-lucide="bell-off" style="width:20px;height:20px"></i>';
         btn.style.color = 'var(--red)';
         btn.title = 'Notifications Blocked';
     } else {
-        btn.textContent = '🔔';
+        btn.innerHTML = '<i data-lucide="bell" style="width:20px;height:20px"></i>';
         btn.style.color = 'white';
         btn.title = 'Click to enable notifications';
     }
+    lucide.createIcons();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -120,9 +121,9 @@ function renderRequests() {
             </div>
             <div class="fw-700 mb-4" style="font-size:1.1rem">${r.visitor_name}</div>
             <div class="text-sm text-muted mb-12 flex-align" style="gap:6px">
-                <span style="font-size:1rem">📱</span> ${r.visitor_phone}
+                <i data-lucide="phone" style="width:14px;height:14px"></i> ${r.visitor_phone}
             </div>
-            <div style="background:rgba(255,255,255,0.03);padding:12px 16px;border-radius:12px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.05)" class="text-sm">
+            <div style="background:var(--primary-bg);padding:12px 16px;border-radius:12px;margin-bottom:16px;border:1px solid var(--border)" class="text-sm">
                 <b class="text-muted" data-lang="purpose">${lang.t('purpose')}:</b> <span class="text-primary">${r.form_data?.purpose || 'General Visit'}</span>
             </div>
             
@@ -135,8 +136,18 @@ function renderRequests() {
                     <button class="btn btn-success btn-sm" style="flex:2;box-shadow:var(--shadow-glow)" onclick="handleAction('${r.id}', 'approve')" data-lang="approve">${lang.t('approve')}</button>
                 </div>
             ` : ''}
+            
+            ${['APPROVED', 'CHECKED_IN', 'COMPLETED'].includes(r.approval_status) ? `
+                <div style="margin-top:10px">
+                    <a href="virtual-pass.html?id=${r.id}" target="_blank" class="btn btn-ghost btn-sm" 
+                       style="color:var(--primary); border:1px solid var(--primary-bg); background:var(--primary-bg); display:block; text-align:center; text-decoration:none; font-weight:600;">
+                       <i data-lucide="ticket" style="width:14px;height:14px;margin-right:8px;vertical-align:middle"></i> View Digital Pass
+                    </a>
+                </div>
+            ` : ''}
         </div>
     `).join('');
+    lucide.createIcons();
 }
 
 function renderHistory() {
@@ -157,10 +168,14 @@ function renderHistory() {
                 <div class="text-right">
                     <span class="badge" style="background:${getStatusColor(r.approval_status)}22; color:${getStatusColor(r.approval_status)}; font-size:0.65rem">${r.approval_status}</span>
                     <div class="text-xs mt-4">${r.duration_minutes ? r.duration_minutes + ' min' : '—'}</div>
+                    ${['APPROVED', 'CHECKED_IN', 'COMPLETED'].includes(r.approval_status) ? `
+                        <a href="virtual-pass.html?id=${r.id}" target="_blank" class="text-xs mt-4 block" style="color:var(--accent); text-decoration:none;"><i data-lucide="ticket" style="width:10px;height:10px;vertical-align:middle;margin-right:2px"></i> View Pass</a>
+                    ` : ''}
                 </div>
             </div>
         `).join('')}
     `;
+    lucide.createIcons();
 }
 
 function getStatusColor(status) {

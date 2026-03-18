@@ -6,18 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — VisitorGate</title>
     <meta name="description"
-        content="Secure login portal for VisitorGate QR-based Visitor Management System. Access admin, security, and staff dashboards.">
+        content="Secure login portal for VisitorGate QR-based Visitor Management System.">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="bg-dark flex-center" style="min-height:100vh">
-    <div class="mesh-bg"></div>
     <div id="loading-bar" class="loading-bar"></div>
 
     <div class="login-card fade-in">
         <!-- Logo -->
-        <div class="login-logo">🛡️</div>
-        <h2 class="text-center mb-4" style="font-size:1.5rem;">Welcome Back</h2>
+        <div class="login-logo">
+            <i data-lucide="shield-check"></i>
+        </div>
+        <h2 class="text-center mb-4" style="font-size:1.4rem;">Welcome Back</h2>
         <p class="text-center text-muted mb-32" style="font-size:0.85rem;">Sign in to your VisitorGate account</p>
 
         <!-- Error Alert -->
@@ -36,8 +38,10 @@
                     <input type="password" id="password" name="password" required placeholder="••••••••"
                         autocomplete="current-password">
                     <button type="button" id="toggle-password"
-                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:4px;"
-                        aria-label="Toggle password visibility">👁️</button>
+                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;"
+                        aria-label="Toggle password visibility">
+                        <i data-lucide="eye" style="width:18px;height:18px"></i>
+                    </button>
                 </div>
             </div>
 
@@ -47,15 +51,11 @@
             </button>
         </form>
 
-        <!-- Role Indicator -->
-        <div id="role-indicator" style="display:none; margin-top:20px; text-align:center;">
-            <div
-                style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:0.8rem;font-weight:600;">
-            </div>
-        </div>
-
         <div class="text-center mt-24">
-            <p class="text-xs text-muted">🔒 Secured with enterprise-grade encryption</p>
+            <p class="text-xs text-muted" style="display:flex;align-items:center;justify-content:center;gap:6px;">
+                <i data-lucide="lock" style="width:12px;height:12px"></i>
+                Secured with enterprise-grade encryption
+            </p>
         </div>
     </div>
 
@@ -64,6 +64,7 @@
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+    <script>lucide.createIcons();</script>
 </body>
 
 </html>

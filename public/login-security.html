@@ -6,14 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Login - VisitorGate</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="bg-dark flex-center" style="min-height:100vh">
-    <div class="card fade-in" style="max-width:400px; width:100%; padding:40px">
+    <div class="login-card fade-in">
         <div class="text-center mb-32">
-            <span style="font-size:48px">🛡️</span>
-            <h1 class="mt-16">Security Login</h1>
-            <p class="text-muted">Access the security dashboard</p>
+            <div class="login-logo">
+                <i data-lucide="shield" style="width:28px;height:28px;color:var(--primary)"></i>
+            </div>
+            <h1 style="font-size:1.4rem;" class="mt-16">Security Login</h1>
+            <p class="text-muted" style="font-size:0.85rem;">Access the security dashboard</p>
         </div>
         <form id="login-form">
             <div id="login-error" class="badge badge-red mb-16 w-100 text-center" style="display:none; padding:10px">
@@ -30,14 +33,18 @@
             <button type="submit" class="btn btn-primary w-100 btn-lg mt-8" id="login-btn">Sign In</button>
         </form>
         <div class="text-center mt-24">
-            <a href="index.html" class="text-xs text-muted">← Back to Role Selection</a>
+            <a href="index.html" class="text-xs text-muted" style="display:inline-flex;align-items:center;gap:4px;">
+                <i data-lucide="arrow-left" style="width:12px;height:12px"></i>
+                Back to Home
+            </a>
         </div>
     </div>
 
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script>
-        // Check if already logged in
+        lucide.createIcons();
+
         if (typeof auth !== 'undefined' && auth.checkExistingSession) {
             auth.checkExistingSession();
         }

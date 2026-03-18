@@ -12,12 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function showSection(id) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('sec-' + id).classList.add('active');
+    const section = document.getElementById('sec-' + id);
+    if (section) section.classList.add('active');
+    
     document.querySelectorAll('.sidebar .nav a').forEach(a => a.classList.remove('active'));
 
-    // Sidebar active state
-    const currentLink = Array.from(document.querySelectorAll('.sidebar .nav a')).find(a => a.getAttribute('onclick')?.includes(`'${id}'`));
-    if (currentLink) currentLink.classList.add('active');
+    // Sidebar active state - match by onclick attribute containing the section id
+    const links = document.querySelectorAll('.sidebar .nav a');
+    links.forEach(a => {
+        if (a.getAttribute('onclick')?.includes(`'${id}'`)) a.classList.add('active');
+    });
 
     loadSectionData(id);
 }
@@ -107,12 +111,13 @@ function renderDeptsTable(depts) {
             <td class="text-sm text-muted">${utils.formatDate(d.created_at)}</td>
             <td>
                 <div class="flex-gap">
-                    <button class="btn btn-ghost btn-xs" onclick="editDept('${d.id}')">✏️</button>
-                    <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteDept('${d.id}','${d.name.replace(/'/g, "\\'")}')">🗑️</button>
+                    <button class="btn btn-ghost btn-xs" onclick="editDept('${d.id}')" title="Edit"><i data-lucide="edit-2" style="width:14px;height:14px"></i></button>
+                    <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteDept('${d.id}','${d.name.replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
                 </div>
             </td>
         </tr>
     `).join('');
+    lucide.createIcons();
 }
 
 // ═══ STAFF ═══
@@ -144,12 +149,13 @@ function renderStaffTable(staff) {
             <td><span class="badge ${u.availability_status === 'available' ? 'badge-green' : 'badge-yellow'}">${u.availability_status || 'available'}</span></td>
             <td>
                 <div class="flex-gap">
-                    <button class="btn btn-ghost btn-xs" onclick="editStaff('${u.id}')">✏️</button>
-                    <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteStaff('${u.id}','${u.name.replace(/'/g, "\\'")}')">🗑️</button>
+                    <button class="btn btn-ghost btn-xs" onclick="editStaff('${u.id}')" title="Edit"><i data-lucide="edit-2" style="width:14px;height:14px"></i></button>
+                    <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="deleteStaff('${u.id}','${u.name.replace(/'/g, "\\'")}')" title="Delete"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
                 </div>
             </td>
         </tr>
     `).join('');
+    lucide.createIcons();
 }
 
 // ═══ EVENTS & BULK ACTIONS ═══
@@ -169,19 +175,20 @@ async function loadEvents() {
                         <h4 class="mb-4">${e.name}</h4>
                         <span class="badge ${e.status === 'ACTIVE' ? 'badge-green' : 'badge-red'} text-xs">${e.status}</span>
                     </div>
-                    <div class="stat-icon" style="background:var(--primary-bg);color:var(--primary)">🎪</div>
+                    <div class="stat-icon" style="background:var(--primary-bg);color:var(--primary)"><i data-lucide="calendar"></i></div>
                 </div>
                 <div class="text-sm text-muted mb-16">
-                    📅 ${new Date(e.event_date).toLocaleDateString()} · 📍 ${e.venue || 'TBA'}
+                    <i data-lucide="calendar" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${new Date(e.event_date).toLocaleDateString()} · <i data-lucide="map-pin" style="width:12px;height:12px;vertical-align:middle;margin-right:4px"></i> ${e.venue || 'TBA'}
                 </div>
                 <div class="flex-gap">
-                    <button class="btn btn-primary btn-sm" onclick="showEventQR('${e.qr_token}','${e.name}')">📱 QR</button>
-                    <button class="btn btn-ghost btn-sm" onclick="viewEventRegistrations('${e.id}','${e.name}')">👥 Regs (${e.total_registrations || 0})</button>
-                    <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')">✏️ Edit</button>
-                    <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteEvent('${e.id}')">🗑️</button>
+                    <button class="btn btn-primary btn-sm" onclick="showEventQR('${e.qr_token}','${e.name}')"><i data-lucide="qr-code" style="width:14px;height:14px;margin-right:4px"></i> QR</button>
+                    <button class="btn btn-ghost btn-sm" onclick="viewEventRegistrations('${e.id}','${e.name}')"><i data-lucide="users" style="width:14px;height:14px;margin-right:4px"></i> Regs (${e.total_registrations || 0})</button>
+                    <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')"><i data-lucide="edit-2" style="width:14px;height:14px"></i></button>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteEvent('${e.id}')"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
                 </div>
             </div>
         `).join('');
+        lucide.createIcons();
     } catch (e) { console.error('Events error:', e); }
 }
 
@@ -222,13 +229,14 @@ async function viewEventRegistrations(eventId, eventName) {
                     <div style="flex:1">
                         <div class="fw-600">${r.visitor_name}</div>
                         <div class="text-xs text-muted">${r.visitor_email || ''}${r.visitor_email && r.visitor_phone ? ' · ' : ''}${r.visitor_phone || ''}</div>
-                        ${r.organization ? `<div class="text-xs text-muted">🏢 ${r.organization}${r.designation ? ' — ' + r.designation : ''}</div>` : ''}
+                        ${r.organization ? `<div class="text-xs text-muted"><i data-lucide="building" style="width:10px;height:10px;vertical-align:middle;margin-right:2px"></i> ${r.organization}${r.designation ? ' — ' + r.designation : ''}</div>` : ''}
                         ${extraDetails}
                     </div>
                     <span class="badge ${r.approval_status === 'APPROVED' ? 'badge-green' : r.approval_status === 'REJECTED' ? 'badge-red' : 'badge-yellow'}">${r.approval_status}</span>
                 </div>
             `;
             }).join('');
+            lucide.createIcons();
         }
         document.getElementById('event-detail-panel').style.display = 'block';
     } catch (e) { alert('Failed to load registrations'); }
@@ -448,30 +456,57 @@ function openAddTemplate() {
 
 function addTmplField(id = '', label = '', type = 'text') {
     const div = document.createElement('div');
-    div.className = 'flex-gap mb-8';
+    div.className = 'flex-gap mb-8 tmpl-field-row';
     div.innerHTML = `
-        <input class="field-id" placeholder="id" value="${id}" style="width:80px">
-        <input class="field-label" placeholder="label" value="${label}" style="flex:1">
-        <select class="field-type"><option value="text">Text</option><option value="select">Dropdown</option></select>
-        <button onclick="this.parentElement.remove()" class="text-red">✕</button>
+        <input class="field-id" placeholder="id" value="${id}" style="width:100px" title="Field ID (e.g. company_name)">
+        <input class="field-label" placeholder="label" value="${label}" style="flex:1" title="Field Label (e.g. Company Name)">
+        <select class="field-type" title="Field Type" style="width:120px">
+            <option value="text" ${type === 'text' ? 'selected' : ''}>Text</option>
+            <option value="tel" ${type === 'tel' || type === 'phone' ? 'selected' : ''}>Phone</option>
+            <option value="email" ${type === 'email' ? 'selected' : ''}>Email</option>
+            <option value="select" ${type === 'select' || type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+            <option value="textarea" ${type === 'textarea' ? 'selected' : ''}>Textarea</option>
+        </select>
+        <button onclick="this.parentElement.remove()" class="text-red btn btn-ghost btn-xs" title="Remove Field" type="button">
+            <i data-lucide="x" style="width:14px;height:14px"></i>
+        </button>
     `;
     document.getElementById('tmpl-fields-list').appendChild(div);
+    lucide.createIcons();
 }
 
 async function saveTemplate() {
     const id = document.getElementById('tmpl-id').value;
+    const name = document.getElementById('tmpl-name').value.trim();
+    if (!name) return alert('Template name is required');
+
     const fields = [];
-    document.querySelectorAll('#tmpl-fields-list .flex-gap').forEach(row => {
-        fields.push({ id: row.querySelector('.field-id').value, label: row.querySelector('.field-label').value, type: row.querySelector('.field-type').value });
+    document.querySelectorAll('#tmpl-fields-list .tmpl-field-row').forEach(row => {
+        const fieldId = row.querySelector('.field-id').value.trim();
+        const fieldLabel = row.querySelector('.field-label').value.trim();
+        const fieldType = row.querySelector('.field-type').value;
+        
+        if (fieldId && fieldLabel) {
+            fields.push({ id: fieldId, label: fieldLabel, type: fieldType });
+        }
     });
-    const payload = { name: document.getElementById('tmpl-name').value, category: document.getElementById('tmpl-category').value, description: document.getElementById('tmpl-desc').value, fields };
+
+    const payload = { 
+        name, 
+        category: document.getElementById('tmpl-category').value, 
+        description: document.getElementById('tmpl-desc').value.trim(), 
+        fields 
+    };
+
     try {
         if (id) await api.put('/form-templates/' + id, payload);
         else await api.post('/form-templates', payload);
         closeModal('modal-template');
         loadTemplates();
-        auth.showToast('Template saved', 'success');
-    } catch (e) { alert('Failed to save template: ' + e.message); }
+        auth.showToast('Template saved successfully', 'success');
+    } catch (e) { 
+        auth.showToast('Failed to save template: ' + (e.message || 'Unknown error'), 'error');
+    }
 }
 
 // ═══ ANALYTICS ═══
@@ -565,6 +600,7 @@ function addEventField(label = '', type = 'text', required = false, placeholder 
         </div>
     `;
     container.appendChild(div);
+    lucide.createIcons();
 }
 
 function toggleFieldOptions(selectEl) {
@@ -680,4 +716,124 @@ async function showEventQR(token, name) {
 }
 
 function handleLogout() { auth.logout(); }
+
+async function exportVisitorReport(format) {
+    const btn = document.getElementById(`btn-export-${format}`);
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-sm"></span> Generating...`;
+
+    try {
+        const data = await api.get('/analytics/detailed-report');
+        if (!data || !data.length) {
+            auth.showToast('No visitor data found for the report', 'warning');
+            return;
+        }
+
+        if (format === 'pdf') {
+            await exportToPDF(data);
+        } else {
+            await exportToExcel(data);
+        }
+        auth.showToast(`Report downloaded successfully as ${format.toUpperCase()}`, 'success');
+    } catch (e) {
+        console.error('Export error:', e);
+        auth.showToast('Failed to generate report: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+async function exportToPDF(data) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4'); // landscape
+
+    // Header styling
+    doc.setFontSize(22);
+    doc.setTextColor(67, 97, 238); // Primary color
+    doc.text('VisitorGate - Detailed Visitor Report', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 27);
+    doc.text(`Total Records: ${data.length}`, 14, 32);
+
+    const body = data.map(r => [
+        r.visitor_name,
+        r.visitor_phone,
+        r.department_name || 'N/A',
+        r.staff_name || 'N/A',
+        r.purpose || 'N/A',
+        r.approval_status,
+        utils.formatDate(r.created_at),
+        r.checkin_time ? utils.formatTime(r.checkin_time) : '—',
+        r.checkout_time ? utils.formatTime(r.checkout_time) : '—'
+    ]);
+
+    doc.autoTable({
+        startY: 40,
+        head: [['Visitor Name', 'Phone', 'Department', 'To Meet', 'Purpose', 'Status', 'Date', 'In', 'Out']],
+        body: body,
+        theme: 'striped',
+        headStyles: { fillColor: [67, 97, 238], fontSize: 9 },
+        styles: { fontSize: 8, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
+    });
+
+    try {
+        const blob = doc.output('blob');
+        downloadFile(blob, `VisitorGate_Report_${Date.now()}.pdf`);
+    } catch (e) {
+        console.warn('PDF save fallback:', e);
+        doc.save(`VisitorGate_Report_${Date.now()}.pdf`);
+    }
+}
+
+async function exportToExcel(data) {
+    const wsData = data.map(r => ({
+        'Visitor Name': r.visitor_name,
+        'Phone': r.visitor_phone,
+        'Email': r.visitor_email || 'N/A',
+        'Department': r.department_name || 'N/A',
+        'Staff to Meet': r.staff_name || 'N/A',
+        'Purpose': r.purpose || 'N/A',
+        'Approval Status': r.approval_status,
+        'Requested Date': new Date(r.created_at).toLocaleDateString(),
+        'Check-In Time': r.checkin_time ? new Date(r.checkin_time).toLocaleString() : 'N/A',
+        'Check-Out Time': r.checkout_time ? new Date(r.checkout_time).toLocaleString() : 'N/A',
+        'Duration (Min)': r.duration_minutes || 0,
+        'Gate': r.gate_location || 'N/A'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Visitor Report");
+
+    const colWidths = [20, 15, 25, 20, 20, 20, 15, 15, 20, 20, 15, 15];
+    ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+    try {
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        downloadFile(blob, `VisitorGate_Report_${Date.now()}.xlsx`);
+    } catch (e) {
+        console.warn('Excel save fallback:', e);
+        XLSX.writeFile(wb, `VisitorGate_Report_${Date.now()}.xlsx`);
+    }
+}
+
+function downloadFile(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 100);
+}
 

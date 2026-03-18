@@ -8,8 +8,38 @@ import QRCode from 'qrcode';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
+import twilio from 'twilio';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
+
+// ═══ TWILIO SMS CLIENT ═══
+const SMS_ENABLED = process.env.SMS_ENABLED === 'true' && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN;
+let twilioClient = null;
+if (SMS_ENABLED) {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    console.log('📱 Twilio SMS integration ENABLED');
+} else {
+    console.log('📱 Twilio SMS integration DISABLED (set SMS_ENABLED=true and configure TWILIO_* in .env)');
+}
+
+// ═══ NODEMAILER EMAIL CLIENT ═══
+const EMAIL_ENABLED = process.env.SMTP_USER && process.env.SMTP_PASS;
+let mailTransporter = null;
+if (EMAIL_ENABLED) {
+    mailTransporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || 587,
+        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+    console.log('📧 Nodemailer integration ENABLED');
+} else {
+    console.log('📧 Nodemailer integration DISABLED (configure SMTP_* in .env)');
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -120,7 +150,6 @@ function adminOnly(req, res, next) {
     return res.status(403).json({ error: 'Admin access required' });
 }
 
-// ═══ EMAIL LOG HELPER ═══
 function sendEmailLog(db, to, subject, body) {
     const id = 'email-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
     db.run(`INSERT INTO email_log (id, recipient, subject, body, status, created_at) VALUES (?,?,?,?,'SENT',NOW())`,
@@ -128,6 +157,111 @@ function sendEmailLog(db, to, subject, body) {
             if (err) console.error('[EMAIL] Log error:', err.message);
             else console.log(`[EMAIL] 📧 To: ${to} | Subject: ${subject}`);
         });
+}
+
+// ═══ VIRTUAL ID PASS HELPER ═══
+async function sendVirtualIDPass(visitorData) {
+    if (!EMAIL_ENABLED || !mailTransporter) {
+        console.log(`[PASS] 📧 SKIPPED (email disabled) | Visit ID Pass for ${visitorData.visitor_name}`);
+        return false;
+    }
+
+    const passId = 'PASS-' + new Date().getFullYear() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    const passUrl = `${process.env.BASE_URL}/virtual-pass.html?id=${visitorData.id}`;
+    
+    // Update request with pass_id
+    db.run(`UPDATE visitor_requests SET pass_id = ? WHERE id = ?`, [passId, visitorData.id]);
+
+    const htmlContent = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div style="background-color: #1e1b4b; padding: 30px; text-align: center; color: white;">
+            <h2 style="margin: 0; font-size: 20px; letter-spacing: 1px;">${process.env.COLLEGE_NAME || 'VisitorGate Institute'}</h2>
+            <p style="margin: 5px 0 0; opacity: 0.8; font-size: 12px;">OFFICIAL VISITOR ID PASS</p>
+        </div>
+        <div style="padding: 30px; text-align: center; background-color: #ffffff;">
+            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(visitorData.visitor_name)}&background=e2e8f0&color=1e1b4b&size=150&bold=true" 
+                 style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid #f1f5f9; margin-bottom: 20px;" alt="Visitor">
+            <h1 style="margin: 0; color: #1e1b4b; font-size: 24px;">${visitorData.visitor_name}</h1>
+            <p style="margin: 5px 0 20px; color: #6366f1; font-weight: 600;">${visitorData.form_data?.purpose || 'General Visit'}</p>
+            
+            <div style="background-color: #f8fafc; border: 1px dashed #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                <p style="margin: 0 0 10px; font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Scan to Verify At Gate</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(process.env.BASE_URL + '/verify.html?id=' + visitorData.id)}" 
+                     style="width: 150px; height: 150px;" alt="Verification QR">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+                <div>
+                    <p style="margin: 0; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Pass ID</p>
+                    <p style="margin: 2px 0 0; font-size: 13px; color: #1e293b; font-weight: 600;">${passId}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Meeting With</p>
+                    <p style="margin: 2px 0 0; font-size: 13px; color: #1e293b; font-weight: 600;">${visitorData.staff_name || 'Staff'}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Department</p>
+                    <p style="margin: 2px 0 0; font-size: 13px; color: #1e293b; font-weight: 600;">${visitorData.department_name || '-'}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Valid Date</p>
+                    <p style="margin: 2px 0 0; font-size: 13px; color: #1e293b; font-weight: 600;">${new Date().toLocaleDateString()}</p>
+                </div>
+            </div>
+        </div>
+        <div style="background-color: #f1f5f9; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <a href="${passUrl}" style="display: inline-block; background-color: #6366f1; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">View Full ID Pass</a>
+            <p style="margin: 15px 0 0; font-size: 11px; color: #94a3b8;">This is an automated message. Please do not reply.</p>
+        </div>
+    </div>
+    `;
+
+    try {
+        await mailTransporter.sendMail({
+            from: `"${process.env.SMTP_FROM_NAME || 'VisitorGate'}" <${process.env.SMTP_USER}>`,
+            to: visitorData.visitor_email,
+            subject: `🎫 Your Visitor ID Pass - ${process.env.COLLEGE_NAME}`,
+            html: htmlContent,
+        });
+        console.log(`[PASS] ✅ Sent to ${visitorData.visitor_email}`);
+        return true;
+    } catch (err) {
+        console.error('[PASS] ❌ Error sending email:', err.message);
+        return false;
+    }
+}
+
+// ═══ SMS NOTIFICATION HELPER ═══
+async function sendSMS(recipientPhone, message, requestId, direction) {
+    const smsId = 'sms-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+
+    if (!SMS_ENABLED || !twilioClient) {
+        console.log(`[SMS] 📱 SKIPPED (disabled) | To: ${recipientPhone} | ${message.substring(0, 60)}...`);
+        // Log as QUEUED even when disabled so status page shows intent
+        db.run(`INSERT INTO sms_notifications (id, request_id, recipient_phone, message, direction, status, error_message, created_at) VALUES (?,?,?,?,?,?,?,NOW())`,
+            [smsId, requestId, recipientPhone, message, direction, 'QUEUED', 'SMS service disabled']);
+        return { success: false, reason: 'disabled' };
+    }
+
+    try {
+        const result = await twilioClient.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: recipientPhone
+        });
+
+        console.log(`[SMS] ✅ Sent to ${recipientPhone} | SID: ${result.sid}`);
+        db.run(`INSERT INTO sms_notifications (id, request_id, recipient_phone, message, direction, status, twilio_sid, created_at) VALUES (?,?,?,?,?,?,?,NOW())`,
+            [smsId, requestId, recipientPhone, message, direction, 'SENT', result.sid]);
+
+        return { success: true, sid: result.sid };
+    } catch (err) {
+        console.error(`[SMS] ❌ Failed to send to ${recipientPhone}:`, err.message);
+        db.run(`INSERT INTO sms_notifications (id, request_id, recipient_phone, message, direction, status, error_message, created_at) VALUES (?,?,?,?,?,?,?,NOW())`,
+            [smsId, requestId, recipientPhone, message, direction, 'FAILED', err.message]);
+
+        return { success: false, error: err.message };
+    }
 }
 
 app.use(express.static('public'));
@@ -195,6 +329,25 @@ pool.getConnection((err, conn) => {
         // Auto-add custom_data column to event_registrations if missing
         pool.query(`ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS custom_data JSON DEFAULT NULL`, (e) => {
             if (e && !e.message.includes('Duplicate')) console.warn('[DB] event_registrations.custom_data:', e.message);
+        });
+        pool.query(`ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS pass_id VARCHAR(20) UNIQUE DEFAULT NULL`, (e) => {
+            if (e && !e.message.includes('Duplicate')) console.warn('[DB] event_registrations.pass_id:', e.message);
+        });
+
+        // Auto-create sms_notifications table if missing
+        pool.query(`CREATE TABLE IF NOT EXISTS sms_notifications (
+            id VARCHAR(64) PRIMARY KEY,
+            request_id VARCHAR(64),
+            recipient_phone VARCHAR(20) NOT NULL,
+            message TEXT,
+            direction ENUM('TO_STAFF','TO_VISITOR') NOT NULL,
+            status ENUM('SENT','FAILED','QUEUED') DEFAULT 'QUEUED',
+            twilio_sid VARCHAR(64),
+            error_message TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB`, (e) => {
+            if (e && !e.message.includes('already exists')) console.warn('[DB] sms_notifications:', e.message);
+            else console.log('[DB] ✅ sms_notifications table ready');
         });
 
         // Global Reset: Set default password 'admin123' for all staff and security users
@@ -436,17 +589,27 @@ app.get('/api/form-templates/:id', (req, res) => {
 // Get server info (for detected IP addressing)
 app.get('/api/server-info', (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-    const host = req.headers['x-forwarded-host'] || req.get('host');
-    let baseUrl = process.env.PUBLIC_URL || `${protocol}://${host}`;
+    let host = req.headers['x-forwarded-host'] || req.get('host');
     
-    // If accessing via localhost, also provide the LAN IP version
+    const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
     const lanIp = getLanIp();
     const lanUrl = `${protocol}://${lanIp}:${port}`;
+
+    // If accessing via localhost and NO static BASE_URL is set,
+    // we should prefer the LAN IP so that generated QR codes are portable.
+    let baseUrl = process.env.BASE_URL || process.env.PUBLIC_URL;
+    if (!baseUrl) {
+        if (!req.headers['x-forwarded-host'] && isLocal) {
+            baseUrl = lanUrl;
+        } else {
+            baseUrl = `${protocol}://${host}`;
+        }
+    }
 
     res.json({
         base_url: baseUrl,
         lan_url: lanUrl,
-        is_local: host.includes('localhost') || host.includes('127.0.0.1')
+        is_local: isLocal
     });
 });
 
@@ -474,8 +637,15 @@ app.post('/api/qr-sessions/generate', authMiddleware, asyncHandler(async (req, r
         host = `${lanIp}:${port}`;
     }
 
-    const baseUrl = process.env.PUBLIC_URL || `${protocol}://${host}`;
-    const visitorUrl = `${baseUrl}/visitor.html?session=${sessionCode}&token=${token}`;
+    const baseUrl = process.env.BASE_URL || process.env.PUBLIC_URL || `${protocol}://${host}`;
+    
+    // Determine the correct page based on category
+    let page = 'visitor.html';
+    if (category === 'event') {
+        page = 'event-register.html';
+    }
+
+    const visitorUrl = `${baseUrl}/${page}?session=${sessionCode}&token=${token}`;
 
     db.run(`INSERT INTO visitor_sessions (id, session_code, template_id, category, qr_code_url, qr_token, qr_token_hash, status, expires_at, generated_by) 
             VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)`,
@@ -576,7 +746,7 @@ app.post('/api/visitor-requests/submit', asyncHandler(async (req, res) => {
             // Mark session as USED
             db.run(`UPDATE visitor_sessions SET status = 'USED' WHERE id = ?`, [session_id]);
 
-            // Send notification to staff
+            // Send notification to staff (DB)
             db.run(`INSERT INTO notifications (id, user_id, type, title, message, data, created_at)
                     VALUES (?, ?, 'visitor_request', ?, ?, ?, NOW())`,
                 ['notif-' + Date.now(), staff_id,
@@ -584,10 +754,19 @@ app.post('/api/visitor-requests/submit', asyncHandler(async (req, res) => {
                 `${visitor_name} wants to meet you - Purpose: ${form_data.purpose}`,
                 JSON.stringify({ request_id: requestId, visitor_name, visitor_phone })]);
 
+            // 📱 Send SMS to staff's phone number
+            db.get('SELECT phone, name FROM users WHERE id = ?', [staff_id], (e2, staffUser) => {
+                if (staffUser && staffUser.phone) {
+                    const smsMsg = `🛡️ VisitorGate: ${visitor_name} (📞 ${visitor_phone}) wants to meet you. Purpose: ${form_data?.purpose || 'General Visit'}. Open your staff portal to respond.`;
+                    sendSMS(staffUser.phone, smsMsg, requestId, 'TO_STAFF');
+                }
+            });
+
             res.status(201).json({
                 success: true,
                 request_id: requestId,
                 message: 'Request sent to staff',
+                sms_sent: SMS_ENABLED,
                 status: 'PENDING'
             });
         }
@@ -670,11 +849,32 @@ app.post('/api/visitor-requests/:request_id/approve', authMiddleware, (req, res)
                 console.error('Error approving request:', err.message);
                 return res.status(500).json({ error: err.message });
             }
-            // Send email notification
-            db.get('SELECT visitor_name, visitor_email FROM visitor_requests WHERE id = ?', [request_id], (e2, vr) => {
-                if (vr && vr.visitor_email) {
-                    sendEmailLog(db, vr.visitor_email, 'Visit Approved - VisitorGate',
-                        `Dear ${vr.visitor_name}, your visit request has been approved. Please proceed to the security gate for check-in.`);
+            // Send email notification + SMS + Virtual ID Pass to visitor
+            db.get(`SELECT vr.*, d.name as department_name, u.name as staff_name 
+                    FROM visitor_requests vr 
+                    LEFT JOIN departments d ON vr.department_id = d.id
+                    LEFT JOIN users u ON vr.staff_id = u.id 
+                    WHERE vr.id = ?`, [request_id], (e2, vr) => {
+                if (vr) {
+                    const formData = JSON.parse(vr.form_data || '{}');
+                    vr.form_data = formData;
+
+                    // 1. Send Virtual ID Pass if approved
+                    if (vr.visitor_email) {
+                        sendVirtualIDPass(vr);
+                    }
+
+                    // 2. Standard email log
+                    if (vr.visitor_email) {
+                        sendEmailLog(db, vr.visitor_email, 'Visit Approved - VisitorGate',
+                            `Dear ${vr.visitor_name}, your visit request has been approved. Please proceed to the security gate for check-in.`);
+                    }
+
+                    // 3. 📱 Send SMS to visitor
+                    if (vr.visitor_phone) {
+                        const smsMsg = `✅ VisitorGate: Your visit request has been APPROVED by ${vr.staff_name || 'Staff'}. Please proceed to the security gate for check-in.`;
+                        sendSMS(vr.visitor_phone, smsMsg, request_id, 'TO_VISITOR');
+                    }
                 }
             });
             res.json({ success: true, message: 'Request approved' });
@@ -693,11 +893,18 @@ app.post('/api/visitor-requests/:request_id/reject', authMiddleware, (req, res) 
                 console.error('Error rejecting request:', err.message);
                 return res.status(500).json({ error: err.message });
             }
-            // Send email notification
-            db.get('SELECT visitor_name, visitor_email FROM visitor_requests WHERE id = ?', [request_id], (e2, vr) => {
-                if (vr && vr.visitor_email) {
-                    sendEmailLog(db, vr.visitor_email, 'Visit Declined - VisitorGate',
-                        `Dear ${vr.visitor_name}, your visit request for tonight has been declined. ${reason ? 'Reason: ' + reason : ''}`);
+            // Send email + SMS notification to visitor
+            db.get('SELECT vr.visitor_name, vr.visitor_email, vr.visitor_phone, u.name as staff_name FROM visitor_requests vr LEFT JOIN users u ON vr.staff_id = u.id WHERE vr.id = ?', [request_id], (e2, vr) => {
+                if (vr) {
+                    if (vr.visitor_email) {
+                        sendEmailLog(db, vr.visitor_email, 'Visit Declined - VisitorGate',
+                            `Dear ${vr.visitor_name}, your visit request has been declined. ${reason ? 'Reason: ' + reason : ''}`);
+                    }
+                    // 📱 Send SMS to visitor
+                    if (vr.visitor_phone) {
+                        const smsMsg = `❌ VisitorGate: Your visit request has been DECLINED by ${vr.staff_name || 'Staff'}.${reason ? ' Reason: ' + reason : ''} Please contact the reception for further assistance.`;
+                        sendSMS(vr.visitor_phone, smsMsg, request_id, 'TO_VISITOR');
+                    }
                 }
             });
             res.json({ success: true, message: 'Request rejected' });
@@ -764,6 +971,52 @@ app.get('/api/analytics/stats', authMiddleware, (req, res) => {
         .catch(err => res.status(500).json({ error: err.message }));
 });
 
+// Detailed Visitor Report for Admin Export
+app.get('/api/analytics/detailed-report', authMiddleware, adminOnly, (req, res) => {
+    const query = `
+        SELECT 
+            vr.id, 
+            vr.visitor_name, 
+            vr.visitor_phone, 
+            vr.visitor_email,
+            d.name as department_name, 
+            u.name as staff_name, 
+            vr.approval_status, 
+            vr.created_at,
+            vr.form_data,
+            c.checkin_time, 
+            c.checkout_time, 
+            c.duration_minutes,
+            c.gate_location,
+            c.status as checkin_status
+        FROM visitor_requests vr
+        LEFT JOIN departments d ON vr.department_id = d.id
+        LEFT JOIN users u ON vr.staff_id = u.id
+        LEFT JOIN checkins c ON vr.id = c.visitor_request_id
+        ORDER BY vr.created_at DESC
+    `;
+
+    db.all(query, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Final processing of rows (parsing JSON form_data)
+        const processed = rows.map(r => {
+            let purpose = 'N/A';
+            try {
+                const data = typeof r.form_data === 'string' ? JSON.parse(r.form_data) : r.form_data;
+                purpose = data.purpose || 'N/A';
+            } catch (e) {}
+            return {
+                ...r,
+                purpose,
+                form_data: undefined // remove raw JSON for report
+            };
+        });
+        
+        res.json(processed);
+    });
+});
+
 // Mark visitor request as BUSY
 app.post('/api/visitor-requests/:request_id/busy', authMiddleware, (req, res) => {
     const request_id = req.params.request_id;
@@ -775,11 +1028,18 @@ app.post('/api/visitor-requests/:request_id/busy', authMiddleware, (req, res) =>
                 console.error('Error marking as busy:', err.message);
                 return res.status(500).json({ error: err.message });
             }
-            // Send email notification
-            db.get('SELECT visitor_name, visitor_email, (SELECT name FROM users WHERE id = ?) as staff_name FROM visitor_requests WHERE id = ?', [staff_id, request_id], (e2, vr) => {
-                if (vr && vr.visitor_email) {
-                    sendEmailLog(db, vr.visitor_email, 'VisitorGate - Staff is Busy',
-                        `Dear ${vr.visitor_name}, ${vr.staff_name || 'Staff'} is currently busy. Please wait at the reception.`);
+            // Send email + SMS notification to visitor
+            db.get('SELECT vr.visitor_name, vr.visitor_email, vr.visitor_phone, u.name as staff_name FROM visitor_requests vr LEFT JOIN users u ON vr.staff_id = u.id WHERE vr.id = ?', [request_id], (e2, vr) => {
+                if (vr) {
+                    if (vr.visitor_email) {
+                        sendEmailLog(db, vr.visitor_email, 'VisitorGate - Staff is Busy',
+                            `Dear ${vr.visitor_name}, ${vr.staff_name || 'Staff'} is currently busy. Please wait at the reception.`);
+                    }
+                    // 📱 Send SMS to visitor
+                    if (vr.visitor_phone) {
+                        const smsMsg = `⏳ VisitorGate: ${vr.staff_name || 'Staff'} is currently BUSY. Please wait at the reception area. You will be notified when they are available.`;
+                        sendSMS(vr.visitor_phone, smsMsg, request_id, 'TO_VISITOR');
+                    }
                 }
             });
             res.json({ success: true, message: 'Staff is busy' });
@@ -807,6 +1067,33 @@ app.get('/api/visitor-requests/:request_id', (req, res) => {
                 form_data: JSON.parse(row.form_data || '{}')
             });
         });
+});
+
+// ===== SMS NOTIFICATION HISTORY =====
+app.get('/api/sms-notifications/:request_id', (req, res) => {
+    const request_id = req.params.request_id;
+    db.all(`SELECT id, recipient_phone, message, direction, status, twilio_sid, error_message, created_at
+            FROM sms_notifications WHERE request_id = ? ORDER BY created_at ASC`,
+        [request_id], (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows || []);
+        });
+});
+
+// ===== VISITOR PASS INFO =====
+app.get('/api/visitor-requests/:id', (req, res) => {
+    const id = req.params.id;
+    db.get(`SELECT vr.*, d.name as department_name, u.name as staff_name, u.designation as staff_designation
+            FROM visitor_requests vr
+            LEFT JOIN departments d ON vr.department_id = d.id
+            LEFT JOIN users u ON vr.staff_id = u.id
+            WHERE vr.id = ?`, [id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(404).json({ error: 'Request not found' });
+        
+        row.form_data = JSON.parse(row.form_data || '{}');
+        res.json(row);
+    });
 });
 
 // Check in visitor
@@ -1098,6 +1385,9 @@ app.get('/api/event-registrations/verify', (req, res) => {
     if (token) {
         query += ' WHERE er.pass_token = ?';
         params.push(token);
+    } else if (id && id.startsWith('VG-E-')) {
+        query += ' WHERE er.pass_id = ?';
+        params.push(id);
     } else if (id) {
         query += ' WHERE er.id = ?';
         params.push(id);
@@ -1115,8 +1405,10 @@ app.get('/api/event-registrations/verify', (req, res) => {
 app.post('/api/event-registrations/:id/approve', (req, res) => {
     const { approved_by } = req.body;
     const pass_token = crypto.randomBytes(16).toString('hex');
-    db.run(`UPDATE event_registrations SET approval_status = 'APPROVED', approved_by = ?, pass_token = ?, approval_time = NOW() WHERE id = ?`,
-        [approved_by || 'admin', pass_token, req.params.id], function (err) {
+    const pass_id = 'VG-E-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+    
+    db.run(`UPDATE event_registrations SET approval_status = 'APPROVED', approved_by = ?, pass_token = ?, pass_id = ?, approval_time = NOW() WHERE id = ?`,
+        [approved_by || 'admin', pass_token, pass_id, req.params.id], function (err) {
             if (err) return res.status(500).json({ error: err.message });
 
             db.get('SELECT * FROM event_registrations WHERE id = ?', [req.params.id], (err2, row) => {
@@ -1254,17 +1546,6 @@ app.get('/api/audit-logs', (req, res) => {
     });
 });
 
-// ===== SERVER INFO =====
-app.get('/api/server-info', (req, res) => {
-    const nets = os.networkInterfaces();
-    let lanIp = 'localhost';
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            if (net.family === 'IPv4' && !net.internal) { lanIp = net.address; break; }
-        }
-    }
-    res.json({ base_url: `http://${lanIp}:${port}` });
-});
 
 // Generic Data Endpoints (REST-like wrapper for Supabase compatibility)
 app.get('/rest/v1/:table', (req, res) => {

@@ -195,6 +195,7 @@ CREATE TABLE `event_registrations` (
   `designation` varchar(255) DEFAULT '',
   `approval_status` enum('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING',
   `pass_token` varchar(100) DEFAULT NULL,
+  `pass_id` varchar(20) DEFAULT NULL,
   `approved_by` varchar(50) DEFAULT NULL,
   `approval_time` datetime DEFAULT NULL,
   `rejection_reason` text DEFAULT NULL,

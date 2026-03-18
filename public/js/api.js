@@ -52,6 +52,11 @@ const utils = {
         const dt = new Date(d);
         return dt.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
     },
+    formatTime(d) {
+        if (!d) return '—';
+        const dt = new Date(d);
+        return dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    },
     getQueryParam(name) {
         return new URLSearchParams(window.location.search).get(name);
     }

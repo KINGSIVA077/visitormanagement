@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS visitor_requests (
     approved_by VARCHAR(64),
     approval_time DATETIME,
     rejection_reason TEXT,
+    pass_id VARCHAR(64) UNIQUE,
     escalation_level INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES visitor_sessions(id) ON DELETE SET NULL,
@@ -80,6 +81,9 @@ CREATE TABLE IF NOT EXISTS visitor_requests (
     FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+-- Add pass_id column if it doesn't exist for older database versions
+ALTER TABLE visitor_requests ADD COLUMN IF NOT EXISTS pass_id VARCHAR(64) UNIQUE AFTER rejection_reason;
 
 CREATE TABLE IF NOT EXISTS checkins (
     id VARCHAR(64) PRIMARY KEY,
@@ -107,6 +111,19 @@ CREATE TABLE IF NOT EXISTS notifications (
     is_read TINYINT(1) DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sms_notifications (
+    id VARCHAR(64) PRIMARY KEY,
+    request_id VARCHAR(64),
+    recipient_phone VARCHAR(20) NOT NULL,
+    message TEXT,
+    direction ENUM('TO_STAFF','TO_VISITOR') NOT NULL,
+    status ENUM('SENT','FAILED','QUEUED') DEFAULT 'QUEUED',
+    twilio_sid VARCHAR(64),
+    error_message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (request_id) REFERENCES visitor_requests(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS audit_logs (
